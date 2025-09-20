@@ -44,7 +44,7 @@
 
 <script>
 import axios from 'axios';
-import { API_URL, MEDIA_API_URL } from '../config.js';
+import { API_URL, MEDIA_API_URL } from '@/config';
 console.log(API_URL, MEDIA_API_URL); 
 
 export default {
