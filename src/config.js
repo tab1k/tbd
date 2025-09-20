@@ -1,0 +1,2 @@
+export const API_URL = 'http://192.168.31.99:8000/api/home/';
+export const MEDIA_API_URL = 'http://192.168.31.99:8000';

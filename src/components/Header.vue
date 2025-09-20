@@ -2,7 +2,7 @@
   <header>
     <nav class="navbar navbar-expand-lg navbar-light">
       <!-- Лого -->
-      <a class="navbar-brand fw-bold" href="#">
+      <a class="navbar-brand fw-bold" href="/">
         <img src="/logo.png" style="height: 45px;" alt="logo" />
       </a>
 
@@ -18,11 +18,11 @@
       <!-- Центрированное меню -->
       <div :class="['collapse', 'navbar-collapse', 'justify-content-center', 'flex-grow-1', { show: isMenuOpen }]" id="navmenu">
         <ul class="navbar-nav mx-auto">
-          <li class="nav-item"><a href="#" class="nav-link">О компании</a></li>
-          <li class="nav-item"><a href="#" class="nav-link">Команда</a></li>
-          <li class="nav-item"><a href="#" class="nav-link">Партнёры и клиенты</a></li>
-          <li class="nav-item"><a href="#" class="nav-link">Услуги</a></li>
-          <li class="nav-item"><a href="#" class="nav-link">Контакты</a></li>
+          <li class="nav-item"><a href="#about" class="nav-link">О компании</a></li>
+          <li class="nav-item"><a href="#team" class="nav-link">Команда</a></li>
+          <li class="nav-item"><a href="#partners" class="nav-link">Партнёры и клиенты</a></li>
+          <li class="nav-item"><a href="#services" class="nav-link">Услуги</a></li>
+          <li class="nav-item"><a href="#contacts" class="nav-link">Контакты</a></li>
         </ul>
       </div>
 
@@ -40,19 +40,24 @@
 
       <!-- Кнопка справа -->
       <div class="d-none d-lg-block">
-        <a href="#" class="btn-accent">ЗАКАЗАТЬ КОНСУЛЬТАЦИЮ</a>
+        <a href="#" @click.prevent="openPopup" class="btn-accent">ЗАКАЗАТЬ КОНСУЛЬТАЦИЮ</a>
       </div>
+
+      <PopupContact :isOpen="showPopup" @close="showPopup = false" />
     </nav>
   </header>
 </template>
 
 <script>
+import PopupContact from '@/components/home/PopupContact.vue';
 export default {
+  components: { PopupContact },
   name: "Header",
   data() {
     return {
       currentLanguage: 'RU',
       isMenuOpen: false, // Состояние для открытия/закрытия меню
+      showPopup: false   // 👈 состояние для попапа
     }
   },
   methods: {
@@ -62,10 +67,14 @@ export default {
     },
     toggleMenu() {
       this.isMenuOpen = !this.isMenuOpen;
+    },
+    openPopup() {         // 👈 метод для открытия попапа
+      this.showPopup = true;
     }
   }
 };
 </script>
+
 
 <style scoped>
 header {
@@ -101,7 +110,7 @@ header .navbar {
   padding: 12px 30px;
   border-radius: 60px;
   font-weight: 400;
-  font-size: 16px;
+  font-size: 15px;
   text-decoration: none;
   transition: all 0.3s ease;
 }

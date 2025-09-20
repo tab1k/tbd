@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3000"  # Порт на хосте:порт внутри контейнера
+    volumes:
+      - .:/app        # Для синхронизации кода между хостом и контейнером
+    environment:
+      - NODE_ENV=development
+    command: npm run dev  # Команда для запуска приложения
+    restart: always  # Чтобы контейнер перезапускался при ошибках

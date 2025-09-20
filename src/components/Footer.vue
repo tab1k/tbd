@@ -60,6 +60,10 @@ export default {
 </script>
 
 <style scoped>
+.container-mode {
+  padding-left: 30px;
+  padding-right: 30px;
+}
 .footer {
   background-color: #f8f9fa;
   color: #2d2f48;
