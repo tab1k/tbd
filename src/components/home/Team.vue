@@ -24,7 +24,8 @@
 
 <script>
 import axios from 'axios';
-import { API_URL, MEDIA_API_URL } from '@/config';
+// import { API_URL, MEDIA_API_URL } from '@/config';
+import { API_URL, MEDIA_API_URL } from '../config.js';
 
 export default {
   name: 'Team',
