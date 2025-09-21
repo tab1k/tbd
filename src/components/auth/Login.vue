@@ -43,11 +43,14 @@ export default {
 
 <style scoped>
 .login-page {
-  min-height: 100vh;
+  min-height: 80vh; /* Используем минимум 100% высоты */
   display: flex;
   justify-content: center;
   align-items: center;
   background: #ebecf0;
+  background-image: url('@/assets/img/hero_right.png'); /* Фоновое изображение */
+  background-position: right center; /* Размещение изображения справа по центру */
+  background-repeat: no-repeat; /* Не повторять фон */
 }
 
 .login-form {
@@ -58,7 +61,9 @@ export default {
   width: 100%;
   max-width: 400px;
   text-align: center;
+  margin: 20px;
 }
+
 
 .login-form h2 {
   margin-bottom: 24px;

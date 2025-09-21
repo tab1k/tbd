@@ -54,6 +54,7 @@ export default {
   font-size: 16px;
   line-height: 1.6;
   color: #666F8E;
+  text-align: start;
 }
 
 /* Контейнер для строк */
@@ -93,7 +94,57 @@ export default {
   max-height: 60px;
 }
 
-/* Мобильная версия */
+/* Планшеты (768px - 992px) */
+@media (min-width: 768px) and (max-width: 992px) {
+  .container-mode {
+    padding-left: 40px;
+    padding-right: 40px;
+  }
+
+  .partners-text {
+    font-size: 15px;
+    text-align: center;
+    margin-bottom: 30px !important;
+  }
+
+  .partners-grid {
+    gap: 25px;
+  }
+
+  .partners-row {
+    justify-content: center;
+    gap: 25px;
+    flex-wrap: wrap;
+  }
+
+  .small-logos img {
+    max-height: 40px;
+    flex: 0 0 calc(33.333% - 25px);
+    margin-bottom: 15px;
+  }
+
+  .large-logos img {
+    max-height: 50px;
+    flex: 0 0 calc(50% - 25px);
+    margin-bottom: 20px;
+  }
+
+  /* Специфичные настройки для строк */
+  .partners-row.small-logos {
+    justify-content: space-around;
+  }
+
+  .partners-row.large-logos {
+    justify-content: center;
+  }
+
+  .partners-row.large-logos img {
+    max-width: 45%;
+    margin: 0 10px 20px 10px;
+  }
+}
+
+/* Мобильная версия (до 768px) */
 @media (max-width: 768px) {
   .partners-grid {
     gap: 15px;
@@ -107,10 +158,63 @@ export default {
 
   .small-logos img {
     max-height: 30px;
+    flex: 0 0 calc(50% - 20px);
+    margin-bottom: 15px;
   }
 
   .large-logos img {
-    max-height: 50px;
+    max-height: 40px;
+    flex: 0 0 calc(50% - 20px);
+    margin-bottom: 15px;
+  }
+
+  .container-mode {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .partners-text {
+    text-align: center;
+    font-size: 14px;
+    margin-bottom: 25px !important;
+  }
+}
+
+/* Очень маленькие экраны (< 576px) */
+@media (max-width: 576px) {
+  .small-logos img {
+    max-height: 25px;
+    flex: 0 0 calc(50% - 15px);
+  }
+
+  .large-logos img {
+    max-height: 35px;
+    flex: 0 0 calc(50% - 15px);
+  }
+
+  .partners-row {
+    gap: 15px;
+  }
+
+  .container-mode {
+    padding-left: 15px;
+    padding-right: 15px;
+  }
+}
+
+/* Большие планшеты в альбомной ориентации (992px - 1200px) */
+@media (min-width: 992px) and (max-width: 1200px) {
+  .small-logos img {
+    max-height: 40px;
+  }
+
+  .large-logos img {
+    max-height: 55px;
+  }
+
+  .container-mode {
+    padding-left: 60px;
+    padding-right: 60px;
   }
 }
 </style>

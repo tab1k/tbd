@@ -16,12 +16,24 @@
                 </p>
               </div>
 
+              
+
               <!-- Форма -->
-              <form>
+              <form @submit.prevent="submitRequest">
+                <!-- Сообщение об успешной отправке -->
+                <div v-if="message" class="alert alert-success mt-3" style="border-radius: 15px;">
+                  {{ message }}
+                </div>
+
+                <!-- Сообщение об ошибке -->
+                <div v-if="errorMessage" class="alert alert-danger mt-3" style="border-radius: 15px;">
+                  {{ errorMessage }}
+                </div>
                 <!-- Имя -->
                 <div class="mb-3" style="text-align: justify;">
                   <label for="name" class="form-label">Имя</label>
                   <input
+                    v-model="name"
                     type="text"
                     class="form-control"
                     id="name"
@@ -34,6 +46,7 @@
                 <div class="mb-3" style="text-align: justify;">
                   <label for="phone" class="form-label">Телефон</label>
                   <input
+                    v-model="phone"
                     type="tel"
                     class="form-control"
                     id="phone"
@@ -49,6 +62,10 @@
                   </button>
                 </div>
               </form>
+
+              
+
+              
             </div>
           </div>
         </div>
@@ -58,6 +75,9 @@
 </template>
 
 <script>
+import axios from "axios";
+import { API_URL, MEDIA_API_URL } from "@/config";
+
 export default {
   name: "PopupContact",
   props: {
@@ -67,9 +87,32 @@ export default {
     },
   },
   emits: ["close"],
+  data() {
+    return {
+      name: "",
+      phone: "",
+      message: null,
+      errorMessage: null,
+    };
+  },
   methods: {
     closePopup() {
       this.$emit("close");
+    },
+    async submitRequest() {
+      try {
+        const response = await axios.post(`${MEDIA_API_URL}/admin-panel/requests/`, {
+          name: this.name,
+          phone: this.phone,
+        });
+        this.message = response.data.message; // Успешное сообщение
+        this.name = "";
+        this.phone = "";
+        this.errorMessage = null;
+      } catch (error) {
+        this.errorMessage = error.response.data.detail || "Произошла ошибка!";
+        this.message = null;
+      }
     },
   },
 };

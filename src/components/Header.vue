@@ -6,14 +6,19 @@
         <img src="/logo.png" style="height: 45px;" alt="logo" />
       </a>
 
-      <!-- Бургер -->
-      <button
-        class="navbar-toggler"
-        type="button"
-        @click="toggleMenu"
-      >
-        <span class="navbar-toggler-icon"></span>
-      </button>
+      <!-- Контейнер для кнопки и бургера (планшеты) -->
+      <div class="d-flex align-items-center d-lg-none">
+        <!-- Кнопка для планшетов -->
+        <a href="#" @click.prevent="openPopup" class="btn-accent btn-sm me-2">ЗАКАЗАТЬ КОНСУЛЬТАЦИЮ</a>
+        <!-- Бургер -->
+        <button
+          class="navbar-toggler"
+          type="button"
+          @click="toggleMenu"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+      </div>
 
       <!-- Центрированное меню -->
       <div :class="['collapse', 'navbar-collapse', 'justify-content-center', 'flex-grow-1', { show: isMenuOpen }]" id="navmenu">
@@ -38,7 +43,7 @@
         </ul>
       </div>
 
-      <!-- Кнопка справа -->
+      <!-- Кнопка справа (десктоп) -->
       <div class="d-none d-lg-block">
         <a href="#" @click.prevent="openPopup" class="btn-accent">ЗАКАЗАТЬ КОНСУЛЬТАЦИЮ</a>
       </div>
@@ -56,25 +61,23 @@ export default {
   data() {
     return {
       currentLanguage: 'RU',
-      isMenuOpen: false, // Состояние для открытия/закрытия меню
-      showPopup: false   // 👈 состояние для попапа
+      isMenuOpen: false,
+      showPopup: false
     }
   },
   methods: {
     setLanguage(lang) {
       this.currentLanguage = lang;
-      // Здесь можно добавить логику для смены языка приложения
     },
     toggleMenu() {
       this.isMenuOpen = !this.isMenuOpen;
     },
-    openPopup() {         // 👈 метод для открытия попапа
+    openPopup() {
       this.showPopup = true;
     }
   }
 };
 </script>
-
 
 <style scoped>
 header {
@@ -113,9 +116,18 @@ header .navbar {
   font-size: 15px;
   text-decoration: none;
   transition: all 0.3s ease;
+  display: inline-block;
+  text-align: center;
 }
 .btn-accent:hover {
   background: #001a6d;
+}
+
+/* 🔹 маленькая кнопка для планшетов */
+.btn-accent.btn-sm {
+  padding: 8px 16px;
+  font-size: 14px;
+  white-space: nowrap;
 }
 
 /* 🔹 языковой dropdown */
@@ -146,13 +158,8 @@ header .navbar {
   display: none;
 }
 
-.language-dropdown .fa-angle-down {
-  font-size: 14px;
-  transition: transform 0.3s ease;
-}
-
-.language-dropdown .btn[aria-expanded="true"] .fa-angle-down {
-  transform: rotate(180deg);
+.navbar-toggler {
+  border: none;
 }
 
 /* 🔹 адаптив */
@@ -166,7 +173,8 @@ header .navbar {
     font-size: 15px;
   }
 
-  .btn-accent {
+  /* Кнопка в выпадающем меню для мобильных */
+  .collapse .btn-accent {
     display: inline-block;
     margin: 16px auto;
     padding: 10px 24px;
@@ -185,6 +193,30 @@ header .navbar {
 
   header .navbar {
     padding: 16px 24px;
+  }
+}
+
+/* Скрываем кнопку планшетов на очень маленьких экранах */
+@media (max-width: 576px) {
+  .btn-accent.btn-sm {
+    display: none !important;
+  }
+  
+  /* Показываем кнопку в меню на мобильных */
+  .collapse .btn-accent {
+    display: inline-block !important;
+  }
+}
+
+/* Показываем кнопку планшетов только на планшетах */
+@media (min-width: 577px) and (max-width: 992px) {
+  .btn-accent.btn-sm {
+    display: inline-block !important;
+  }
+  
+  /* Скрываем кнопку в меню на планшетах */
+  .collapse .btn-accent {
+    display: none !important;
   }
 }
 </style>

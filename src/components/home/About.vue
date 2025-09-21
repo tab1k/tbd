@@ -2,21 +2,33 @@
   <section id="about" class="about-section py-5">
     <div class="container-mode">
       <div class="row align-items-center">
-        
-        <div class="col-md-6 mb-4 mb-md-0">
-          <h2 class="section-title mb-5">О компании</h2>
+
+        <!-- Видео -->
+        <div class="col-md-6 order-1 order-md-2">
+          <div class="ratio ratio-16x9 rounded-2 shadow-sm about-video">
+            <video :src="videoUrl" controls preload="auto" style="width: 100%; height: auto; border-radius: 5px;">
+              Ваш браузер не поддерживает видео.
+            </video>
+          </div>
+        </div>
+
+        <!-- Текст -->
+        <div class="col-md-6 mb-4 mb-md-0 order-2 order-md-1">
+          <h2 class="section-title mt-4">О нас</h2>
+          <p>Мы — команда экспертов с более чем 18-летним опытом в стратегических коммуникациях, управлении репутацией и построении устойчивых связей между бизнесом и обществом.</p>
           <p>
-            Turan Business Development – это синергия инноваций,
-            опыта и креативности.
+            Turan Business Development основано как платформа, объединяющая лучшие практики и региональный контекст для создания сильных, прозрачных и результативных коммуникаций.
           </p>
           <p>
-            Под руководством Жанар Бекбассовой наша команда
-            создает проекты, которые задают тренды и меняют индустрию.
+            Наше отличие:
           </p>
+          <p>— Глубокая экспертиза в чувствительных и регулируемых отраслях <br>
+            — Стратегический подход в каждой детали <br>
+            — Понимание политико-экономических реалий стран СНГ, Ближнего Востока и Европы
+          </p>
+
           <p>
-            Мы работаем на международном уровне, превращая каждое событие в
-            незабываемую историю, а каждую PR-кампанию – в мощный голос вашего
-            бренда на мировой арене.
+            Мы не просто сопровождаем — мы встраиваемся в ваши цели, чтобы масштабировать их через смысл, диалог и доверие.
           </p>
 
           <!-- Кнопки -->
@@ -28,24 +40,15 @@
           </div>
         </div>
 
-        <!-- Видео -->
-        <div class="col-md-6">
-          <div class="ratio ratio-16x9 rounded-2 shadow-sm about-video">
-            <video :src="videoUrl" controls preload="auto" style="width: 100%; height: auto; border-radius: 5px;">
-              Ваш браузер не поддерживает видео.
-            </video>
-          </div>
-        </div>
-
       </div>
     </div>
   </section>
 </template>
 
+
 <script>
 import axios from 'axios';
 import { API_URL, MEDIA_API_URL } from '@/config';
-console.log(API_URL, MEDIA_API_URL); 
 
 export default {
   data() {

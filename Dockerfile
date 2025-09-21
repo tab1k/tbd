@@ -1,23 +1,26 @@
-# Используем официальную версию Node.js 20
-FROM node:20
+# Stage 1: build the app using Node
+FROM node:18 AS build
 
-# Устанавливаем рабочую директорию
 WORKDIR /app
 
 # Копируем package.json и package-lock.json
 COPY package*.json ./
+RUN npm install
 
-# Устанавливаем vite глобально
-RUN npm install -g vite
-
-# Устанавливаем остальные зависимости
-RUN npm install --legacy-peer-deps
-
-# Копируем все остальные файлы проекта
+# Копируем исходный код и собираем фронтенд
 COPY . .
+RUN npm run build
 
-# Открываем порт
-EXPOSE 3000
+# Stage 2: Serve the app with Nginx
+FROM nginx:1.25
 
-# Запускаем приложение
-CMD ["npm", "run", "dev"]
+# Копируем собранные файлы из предыдущего stage
+COPY --from=build /app/dist /usr/share/nginx/html
+
+# Копируем конфигурацию Nginx
+COPY nginx/default.conf /etc/nginx/conf.d/
+
+# Убедимся, что Nginx слушает на порту 80
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]

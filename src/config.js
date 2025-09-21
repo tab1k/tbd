@@ -1,2 +1,2 @@
-export const API_URL = 'https://3b398c4116bc.ngrok-free.app/api/home/';
-export const MEDIA_API_URL = 'https://3b398c4116bc.ngrok-free.app/';
+export const API_URL = 'http://192.168.0.12:8000/api/home/';
+export const MEDIA_API_URL = 'http://192.168.0.12:8000';

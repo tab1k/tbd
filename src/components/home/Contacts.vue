@@ -17,11 +17,22 @@
           </div>
 
           <!-- Форма -->
-          <form>
+          <form @submit.prevent="submitForm">
+            <!-- Сообщение об успешной отправке -->
+            <div v-if="message" class="alert alert-success mt-3" style="border-radius: 15px;">
+              {{ message }}
+            </div>
+
+            <!-- Сообщение об ошибке -->
+            <div v-if="errorMessage" class="alert alert-danger mt-3" style="border-radius: 15px;">
+              {{ errorMessage }}
+            </div>
+
             <!-- Имя -->
             <div class="mb-3">
               <label for="name" class="form-label">Имя</label>
               <input
+                v-model="name"
                 type="text"
                 class="form-control"
                 id="name"
@@ -34,6 +45,7 @@
             <div class="mb-3">
               <label for="phone" class="form-label">Телефон</label>
               <input
+                v-model="phone"
                 type="tel"
                 class="form-control"
                 id="phone"
@@ -56,8 +68,39 @@
 </template>
 
 <script>
+import axios from "axios";
+import { API_URL, MEDIA_API_URL } from "@/config";
+
 export default {
   name: "ContactForm",
+  data() {
+    return {
+      name: "",
+      phone: "",
+      message: null,
+      errorMessage: null
+    };
+  },
+  methods: {
+    async submitForm() {
+      try {
+        // Отправка данных формы на сервер
+        const response = await axios.post(`${MEDIA_API_URL}/admin-panel/requests/`, {
+          name: this.name,
+          phone: this.phone
+        });
+        // Успешное сообщение
+        this.message = response.data.message;
+        this.name = "";
+        this.phone = "";
+        this.errorMessage = null;
+      } catch (error) {
+        // Сообщение об ошибке
+        this.errorMessage = error.response?.data?.detail || "Произошла ошибка!";
+        this.message = null;
+      }
+    }
+  }
 };
 </script>
 
@@ -78,7 +121,7 @@ export default {
   }
 
   p.text-muted {
-      text-align: start;
+    text-align: start;
   }
 }
 

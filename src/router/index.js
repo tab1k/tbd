@@ -54,4 +54,16 @@ const router = createRouter({
   routes,
 });
 
+// Проверка авторизации
+router.beforeEach((to, from, next) => {
+  const isAuthenticated = localStorage.getItem('access_token'); // Проверка, есть ли токен в локальном хранилище
+
+  // Если пытаемся попасть в админку, но токен отсутствует
+  if (to.path.startsWith('/admin') && !isAuthenticated) {
+    next('/login'); // Перенаправляем на страницу входа
+  } else {
+    next(); // Даем пройти на страницу
+  }
+});
+
 export default router;

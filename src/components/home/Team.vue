@@ -1,22 +1,19 @@
 <template>
   <section id="team" class="py-5">
     <div class="container-mode">
-      <h2 class="section-title">В нашей команде</h2>
+      <h2 class="mb-3">Команда</h2>
       <!-- g-2 уменьшает отступы между колонками -->
       <div class="row text-center g-2">
         <!-- Перебираем команду и отображаем карточки -->
         <div class="col-md-3" v-for="member in team" :key="member.id">
           <div class="team-card">
             <div class="photo">
-              <!-- Здесь мы теперь уже используем обработанный URL -->
               <img :src="getMemberPhotoUrl(member.photo)" alt="team-member">
             </div>
             <h5 class="mt-3">{{ member.name }}</h5>
             <p>{{ member.role }}</p>
           </div>
         </div>
-        <!-- пустая колонка для четвертой карточки -->
-        <div class="col-md-3"></div>
       </div>
     </div>
   </section>
@@ -49,7 +46,6 @@ export default {
   }
 }
 </script>
-
 <style scoped>
 .container-mode {
   padding-left: 80px;
@@ -75,10 +71,25 @@ export default {
 }
 
 @media (max-width: 768px) {
-
   .container-mode {
-    padding-left: 30px;
-    padding-right: 30px;
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .row {
+    display: flex;
+    flex-wrap: nowrap; /* Убираем перенос строк */
+    overflow-x: auto; /* Горизонтальная прокрутка */
+    -webkit-overflow-scrolling: touch; /* Плавная прокрутка на iOS */
+  }
+
+  .col-md-3 {
+    flex: 0 0 85%; /* 70% ширины для одной карточки */
+  }
+
+  /* Настройка для того, чтобы была видна еще часть следующей карточки */
+  .col-md-3 + .col-md-3 {
+    margin-left: 15px; /* Немного отступа для следующей карточки */
   }
 }
 </style>
