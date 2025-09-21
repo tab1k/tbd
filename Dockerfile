@@ -1,6 +1,5 @@
 # Stage 1: build the app using Node
 FROM node:18 AS build
-
 WORKDIR /app
 
 # Копируем package.json и package-lock.json
@@ -17,8 +16,8 @@ FROM nginx:1.25
 # Копируем собранные файлы из предыдущего stage
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Копируем конфигурацию Nginx
-COPY nginx/default.conf /etc/nginx/conf.d/
+# Копируем конфигурацию Nginx (если есть)
+# COPY nginx/default.conf /etc/nginx/conf.d/
 
 # Убедимся, что Nginx слушает на порту 80
 EXPOSE 80
