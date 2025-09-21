@@ -16,6 +16,9 @@ FROM nginx:1.25
 # Копируем собранные файлы из предыдущего stage
 COPY --from=build /app/dist /usr/share/nginx/html
 
+# Копируем конфигурацию Nginx
+COPY nginx/default.conf /etc/nginx/conf.d/default.conf
+
 # Убедимся, что Nginx слушает на порту 80
 EXPOSE 80
 
