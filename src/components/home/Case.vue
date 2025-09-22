@@ -22,7 +22,7 @@
                 <div class="row">
                   <div class="col-12">
                     <img 
-                      :src="MEDIA_API_URL + caseItem.image" 
+                      :src="MEDIA_API_URL + (caseItem.images && caseItem.images[0] ? caseItem.images[0].image : caseItem.image)" 
                       class="d-block w-100 rounded shadow cursor-pointer" 
                       :alt="caseItem.title" 
                       @click="openModal(index)"
@@ -40,7 +40,7 @@
                 <div class="row">
                   <div class="col-md-4 mb-4" v-for="caseItem in chunk" :key="caseItem.id">
                     <img 
-                      :src="MEDIA_API_URL + caseItem.image" 
+                      :src="MEDIA_API_URL + (caseItem.images && caseItem.images[0] ? caseItem.images[0].image : caseItem.image)" 
                       class="d-block w-100 rounded shadow cursor-pointer" 
                       :alt="caseItem.title" 
                       @click="openModal(getCaseIndex(caseItem))"
@@ -59,23 +59,26 @@
     <!-- Минималистичный попап -->
     <div v-if="isModalOpen" class="minimal-modal-overlay" @click.self="closeModal">
       <div class="minimal-modal-container">
-        <!-- Контент попапа -->
         <div class="minimal-modal-content">
           <!-- Заголовок и закрытие -->
           <div class="modal-header">
             <div class="case-counter">
-              {{ currentIndex + 1 }}/{{ cases.length }}
+              {{ currentIndex + 1 }}/{{ selectedCase?.images?.length || 0 }}
             </div>
-            <button @click="closeModal" class="close-btn">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-              </svg>
-            </button>
+            <button @click="closeModal" class="close-btn">×</button>
           </div>
           
           <!-- Изображение -->
           <div class="modal-image-wrapper">
-            <img v-if="selectedCase?.image" :src="MEDIA_API_URL + selectedCase.image" :alt="selectedCase?.title" class="modal-image">
+            <img 
+              v-if="selectedCase?.images?.length && selectedCase.images[currentIndex]?.image"
+              :src="MEDIA_API_URL + selectedCase.images[currentIndex].image" 
+              :alt="selectedCase?.title" 
+              class="modal-image"
+            >
+            <div v-else class="image-placeholder">
+              Изображение не доступно
+            </div>
           </div>
           
           <!-- Информация -->
@@ -85,32 +88,38 @@
           </div>
           
           <!-- Навигация -->
-          <div class="modal-nav">
-            <button @click="prevCase" class="nav-btn" :disabled="cases.length <= 1">
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                <path d="M10 12L6 8L10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
+          <div class="modal-nav" v-if="selectedCase?.images?.length > 1">
+            <button @click="prevCaseImage" class="nav-btn">
+              ◀
             </button>
-            
+
             <div class="nav-dots">
-              <div v-for="(_, index) in cases" :key="index" 
-                   :class="['nav-dot', { active: index === currentIndex }]" 
-                   @click="goToCase(index)"></div>
+              <div v-for="(img, index) in selectedCase?.images" :key="img.id"
+                  :class="['nav-dot', { active: index === currentIndex }]"
+                  @click="goToImage(index)"></div>
             </div>
-            
-            <button @click="nextCase" class="nav-btn" :disabled="cases.length <= 1">
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                <path d="M6 12L10 8L6 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
+
+            <button @click="nextCaseImage" class="nav-btn">
+              ▶
             </button>
           </div>
         </div>
       </div>
     </div>
+
+
   </div>
 </template>
 
 <style scoped>
+  .image-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    color: #999;
+    font-style: italic;
+  }
   .container-mode {
     padding-left: 80px;
     padding-right: 80px;
@@ -378,7 +387,6 @@
       };
     },
     computed: {
-      // Группируем кейсы по 3 для десктопа
       desktopChunks() {
         const chunks = [];
         for (let i = 0; i < this.cases.length; i += 3) {
@@ -390,62 +398,73 @@
     async created() {
       try {
         const response = await axios.get(API_URL);
-        this.cases = response.data.cases;
+        this.cases = response.data.cases || [];
       } catch (error) {
         console.error('Error fetching cases data:', error);
+        this.cases = [];
       }
     },
     methods: {
-      // Получаем индекс кейса в общем массиве
       getCaseIndex(caseItem) {
         return this.cases.findIndex(item => item.id === caseItem.id);
       },
       
       openModal(index) {
-        this.currentIndex = index;
-        this.selectedCase = this.cases[this.currentIndex];
+        this.currentIndex = 0; // Сбрасываем на первое изображение
+        this.selectedCase = this.cases[index];
         this.isModalOpen = true;
+        
+        // Правильное блокирование скролла
+        document.documentElement.style.overflow = 'hidden';
         document.body.style.overflow = 'hidden';
-        document.body.classList.add('modal-open');
       }, 
+      
       closeModal() { 
         this.isModalOpen = false; 
-        document.body.style.overflow = 'auto';
-        document.body.classList.remove('modal-open');
+        
+        // Восстановление скролла
+        document.documentElement.style.overflow = '';
+        document.body.style.overflow = '';
       }, 
-      nextCase() { 
-        if (this.cases.length > 0) { 
-          this.currentIndex = (this.currentIndex + 1) % this.cases.length; 
-          this.selectedCase = this.cases[this.currentIndex]; 
-        } 
-      }, 
-      prevCase() { 
-        if (this.cases.length > 0) { 
-          this.currentIndex = (this.currentIndex - 1 + this.cases.length) % this.cases.length; 
-          this.selectedCase = this.cases[this.currentIndex]; 
-        } 
-      }, 
-      goToCase(index) { 
-        this.currentIndex = index; 
-        this.selectedCase = this.cases[this.currentIndex]; 
+      
+      nextCaseImage() {
+        if (this.selectedCase?.images?.length > 0) {
+          this.currentIndex = (this.currentIndex + 1) % this.selectedCase.images.length;
+        }
       },
       
-      // Проверяем мобильное устройство
+      prevCaseImage() {
+        if (this.selectedCase?.images?.length > 0) {
+          this.currentIndex = (this.currentIndex - 1 + this.selectedCase.images.length) % this.selectedCase.images.length;
+        }
+      },
+      
+      goToImage(index) {
+        if (this.selectedCase?.images?.length > index) {
+          this.currentIndex = index;
+        }
+      },
+      
       checkMobile() {
         this.isMobile = window.innerWidth < 768;
       }
     },
     mounted() { 
-      document.addEventListener('keydown', (e) => { 
+      // Обработка Escape
+      const handleEscape = (e) => { 
         if (e.key === 'Escape' && this.isModalOpen) { 
           this.closeModal(); 
         } 
-      }); 
+      };
       
-      // Обновляем при изменении размера окна
+      document.addEventListener('keydown', handleEscape);
       window.addEventListener('resize', this.checkMobile);
+      
+      // Сохраняем ссылку для удаления
+      this._handleEscape = handleEscape;
     },
     beforeUnmount() {
+      document.removeEventListener('keydown', this._handleEscape);
       window.removeEventListener('resize', this.checkMobile);
     }
   }
