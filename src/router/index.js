@@ -6,6 +6,8 @@ import AdminCases from '../components/admin/AdminCases.vue';
 import AdminTeams from '../components/admin/AdminTeams.vue'; // Добавил маршрут для команды
 import AdminVideos from '../components/admin/AdminVideos.vue'; // Импорт компонента AdminVideos
 import AdminRequests from '../components/admin/AdminRequests.vue';
+import AdminNews from '../components/admin/AdminNews.vue';
+import AdminLogo from '../components/admin/AdminLogo.vue';
 import Login from '../components/auth/Login.vue';
 import Register from '../components/auth/Register.vue';
 
@@ -46,6 +48,16 @@ const routes = [
     path: '/admin/requests', // Страница видео
     name: 'AdminRequests',
     component: AdminRequests, // Компонент AdminVideos
+  },
+  {
+    path: '/admin/news', // Страница видео
+    name: 'AdminNews',
+    component: AdminNews, // Компонент AdminVideos
+  },
+  {
+    path: '/admin/logo', // Страница видео
+    name: 'AdminLogo',
+    component: AdminLogo, // Компонент AdminVideos
   },
 ];
 

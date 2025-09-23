@@ -5,467 +5,493 @@
       <div class="col-lg-3 col-md-4 mb-4 d-flex flex-column justify-content-between">
         <div>
           <h2 class="fw-bold">Наши кейсы</h2>
-          <p class="text-muted"> Реальные кейсы — как мы выстраиваем коммуникации, повышаем доверие и расширяем горизонты бизнеса </p>
+          <p class="text-muted">Реальные кейсы — как мы выстраиваем коммуникации, повышаем доверие и расширяем горизонты бизнеса</p>
         </div>
         <div class="d-flex gap-2">
-          <button class="btn btn-light border rounded-circle" data-bs-target="#casesCarousel" data-bs-slide="prev"> <i class="bi bi-arrow-left"></i> </button>
-          <button class="btn btn-light border rounded-circle" data-bs-target="#casesCarousel" data-bs-slide="next"> <i class="bi bi-arrow-right"></i> </button>
+          <button class="btn btn-light border rounded-circle" data-bs-target="#casesCarousel" data-bs-slide="prev">
+            <i class="bi bi-arrow-left"></i>
+          </button>
+          <button class="btn btn-light border rounded-circle" data-bs-target="#casesCarousel" data-bs-slide="next">
+            <i class="bi bi-arrow-right"></i>
+          </button>
         </div>
       </div>
+
       <!-- Правая часть: слайдер -->
       <div class="col-lg-9 col-md-8">
         <div id="casesCarousel" class="carousel slide" data-bs-ride="carousel">
           <div class="carousel-inner">
-            <!-- Для мобильных - по 1 карточке -->
-            <template v-if="isMobile">
-              <div class="carousel-item" v-for="(caseItem, index) in cases" :key="caseItem.id" :class="{ active: index === 0 }">
+            <!-- Skeleton loading -->
+            <template v-if="loading">
+              <div class="carousel-item active">
                 <div class="row">
-                  <div class="col-12">
-                    <img 
-                      :src="MEDIA_API_URL + (caseItem.images && caseItem.images[0] ? caseItem.images[0].image : caseItem.image)" 
-                      class="d-block w-100 rounded shadow cursor-pointer" 
-                      :alt="caseItem.title" 
-                      @click="openModal(index)"
-                      style="height: 200px; object-fit: cover;"
-                    >
-                    <p class="mt-2 fw-semibold">{{ caseItem.title }}</p>
+                  <div class="col-md-4 mb-4" v-for="n in isMobile ? 1 : 3" :key="n">
+                    <div class="skeleton-image rounded" style="height: 200px;"></div>
+                    <div class="skeleton-text mt-2"></div>
                   </div>
                 </div>
               </div>
             </template>
-            
-            <!-- Для десктопа - по 3 карточки -->
+
+            <!-- Контент после загрузки -->
             <template v-else>
-              <div class="carousel-item" v-for="(chunk, chunkIndex) in desktopChunks" :key="chunkIndex" :class="{ active: chunkIndex === 0 }">
-                <div class="row">
-                  <div class="col-md-4 mb-4" v-for="caseItem in chunk" :key="caseItem.id">
-                    <img 
-                      :src="MEDIA_API_URL + (caseItem.images && caseItem.images[0] ? caseItem.images[0].image : caseItem.image)" 
-                      class="d-block w-100 rounded shadow cursor-pointer" 
-                      :alt="caseItem.title" 
-                      @click="openModal(getCaseIndex(caseItem))"
-                      style="height: 200px; object-fit: cover;"
-                    >
-                    <p class="mt-2 fw-semibold">{{ caseItem.title }}</p>
+              <!-- Для мобильных -->
+              <template v-if="isMobile">
+                <div class="carousel-item" v-for="(caseItem, index) in cases" :key="caseItem.id" :class="{ active: index === 0 }">
+                  <div class="row">
+                    <div class="col-12">
+                      <img 
+                        :src="getImageUrl(caseItem)" 
+                        :alt="caseItem.title" 
+                        @click="openModal(index)"
+                        class="d-block w-100 rounded shadow cursor-pointer"
+                        style="height: 200px; object-fit: cover;"
+                        loading="lazy"
+                      >
+                      <p class="mt-2 fw-semibold">{{ caseItem.title }}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </template>
+
+              <!-- Для десктопа -->
+              <template v-else>
+                <div class="carousel-item" v-for="(chunk, chunkIndex) in desktopChunks" :key="chunkIndex" :class="{ active: chunkIndex === 0 }">
+                  <div class="row">
+                    <div class="col-md-4 mb-4" v-for="caseItem in chunk" :key="caseItem.id">
+                      <img 
+                        :src="getImageUrl(caseItem)" 
+                        :alt="caseItem.title" 
+                        @click="openModal(getCaseIndex(caseItem))"
+                        class="d-block w-100 rounded shadow cursor-pointer"
+                        style="height: 200px; object-fit: cover;"
+                        loading="lazy"
+                      >
+                      <p class="mt-2 fw-semibold">{{ caseItem.title }}</p>
+                    </div>
+                  </div>
+                </div>
+              </template>
             </template>
           </div>
         </div>
       </div>
     </div>
-    
-    <!-- Минималистичный попап -->
+
+    <!-- Модальное окно -->
     <div v-if="isModalOpen" class="minimal-modal-overlay" @click.self="closeModal">
       <div class="minimal-modal-container">
         <div class="minimal-modal-content">
-          <!-- Заголовок и закрытие -->
           <div class="modal-header">
             <div class="case-counter">
               {{ currentIndex + 1 }}/{{ selectedCase?.images?.length || 0 }}
             </div>
             <button @click="closeModal" class="close-btn">×</button>
           </div>
-          
-          <!-- Изображение -->
+
           <div class="modal-image-wrapper">
             <img 
-              v-if="selectedCase?.images?.length && selectedCase.images[currentIndex]?.image"
-              :src="MEDIA_API_URL + selectedCase.images[currentIndex].image" 
-              :alt="selectedCase?.title" 
+              v-if="selectedCase && selectedCase.images && selectedCase.images[currentIndex]"
+              :src="getModalImageUrl(selectedCase.images[currentIndex])" 
+              :alt="selectedCase.title" 
               class="modal-image"
             >
             <div v-else class="image-placeholder">
               Изображение не доступно
             </div>
           </div>
-          
-          <!-- Информация -->
+
           <div class="modal-info">
             <h3 class="modal-title">{{ selectedCase?.title }}</h3>
             <p class="modal-description">{{ selectedCase?.description }}</p>
           </div>
-          
-          <!-- Навигация -->
+
           <div class="modal-nav" v-if="selectedCase?.images?.length > 1">
-            <button @click="prevCaseImage" class="nav-btn">
-              ◀
-            </button>
-
+            <button @click="prevCaseImage" class="nav-btn">◀</button>
             <div class="nav-dots">
-              <div v-for="(img, index) in selectedCase?.images" :key="img.id"
-                  :class="['nav-dot', { active: index === currentIndex }]"
-                  @click="goToImage(index)"></div>
+              <div 
+                v-for="(img, index) in selectedCase.images" 
+                :key="index"
+                :class="['nav-dot', { active: index === currentIndex }]"
+                @click="goToImage(index)"
+              ></div>
             </div>
-
-            <button @click="nextCaseImage" class="nav-btn">
-              ▶
-            </button>
+            <button @click="nextCaseImage" class="nav-btn">▶</button>
           </div>
         </div>
       </div>
     </div>
-
-
   </div>
 </template>
 
 <style scoped>
-  .image-placeholder {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 200px;
-    color: #999;
-    font-style: italic;
-  }
+.skeleton-image {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+.skeleton-text {
+  height: 16px;
+  background: #f0f0f0;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+@keyframes loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.image-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: #999;
+  font-style: italic;
+}
+
+.container-mode {
+  padding-left: 80px;
+  padding-right: 80px;
+}
+
+@media (max-width: 768px) {
   .container-mode {
-    padding-left: 80px;
-    padding-right: 80px;
+    padding-left: 15px;
+    padding-right: 15px;
   }
-  
-  @media (max-width: 768px) {
-    .container-mode {
-      padding-left: 15px;
-      padding-right: 15px;
-    }
-  }
-  
-  img {
-    object-fit: cover;
-  }
-  
-  .cursor-pointer {
-    cursor: pointer;
-  }
-  
-  /* Минималистичный попап */
+}
+
+img {
+  object-fit: cover;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.minimal-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.minimal-modal-container {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+}
+
+.minimal-modal-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f1f3f4;
+}
+
+.case-counter {
+  font-size: 12px;
+  color: #666;
+  font-weight: 500;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: #666;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+  color: #333;
+  background: #f5f5f5;
+}
+
+.modal-image-wrapper {
+  background: #fafafa;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  max-height: 300px;
+}
+
+.modal-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.modal-info {
+  padding: 20px;
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+.modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+.modal-description {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #666;
+  margin: 0;
+}
+
+.modal-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-top: 1px solid #f1f3f4;
+  background: #fafafa;
+}
+
+.nav-btn {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-btn:hover:not(:disabled) {
+  border-color: #ccc;
+  background: #f8f9fa;
+}
+
+.nav-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.nav-dots {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.nav-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ddd;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.nav-dot.active {
+  background: #666;
+  transform: scale(1.2);
+}
+
+.nav-dot:hover {
+  background: #999;
+}
+
+@media (max-width: 640px) {
   .minimal-modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0, 0, 0, 0.7);
-    z-index: 10000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
+    padding: 10px;
   }
   
   .minimal-modal-container {
-    background: white;
-    border-radius: 20px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-    max-width: 500px;
-    width: 100%;
-    max-height: 90vh;
-    overflow: hidden;
-  }
-  
-  .minimal-modal-content {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-  }
-  
-  /* Шапка */
-  .modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 16px 20px;
-    border-bottom: 1px solid #f1f3f4;
-  }
-  
-  .case-counter {
-    font-size: 12px;
-    color: #666;
-    font-weight: 500;
-  }
-  
-  .close-btn {
-    background: none;
-    border: none;
-    padding: 4px;
-    cursor: pointer;
-    color: #666;
-    border-radius: 4px;
-    transition: all 0.2s ease;
-  }
-  
-  .close-btn:hover {
-    color: #333;
-    background: #f5f5f5;
-  }
-  
-  /* Изображение */
-  .modal-image-wrapper {
-    background: #fafafa;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 200px;
-    max-height: 300px;
-  }
-  
-  .modal-image {
     max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
+    max-height: 95vh;
   }
   
-  /* Информация */
+  .modal-image-wrapper {
+    padding: 15px;
+    min-height: 150px;
+    max-height: 250px;
+  }
+  
   .modal-info {
-    padding: 20px;
-    flex-grow: 1;
-    overflow-y: auto;
+    padding: 15px;
   }
   
   .modal-title {
-    font-size: 18px;
-    font-weight: 600;
-    color: #333;
-    margin-bottom: 12px;
-    line-height: 1.4;
+    font-size: 16px;
   }
   
   .modal-description {
-    font-size: 14px;
-    line-height: 1.5;
-    color: #666;
-    margin: 0;
+    font-size: 13px;
   }
   
-  /* Навигация */
   .modal-nav {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 20px;
-    border-top: 1px solid #f1f3f4;
-    background: #fafafa;
+    padding: 12px 15px;
   }
   
   .nav-btn {
-    background: white;
-    border: 1px solid #e0e0e0;
-    border-radius: 6px;
-    padding: 8px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    padding: 6px;
+  }
+}
+
+@media (max-width: 380px) {
+  .modal-image-wrapper {
+    min-height: 120px;
+    max-height: 200px;
   }
   
-  .nav-btn:hover:not(:disabled) {
-    border-color: #ccc;
-    background: #f8f9fa;
+  .modal-header {
+    padding: 12px 15px;
   }
   
-  .nav-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
+  .modal-info {
+    padding: 12px 15px;
   }
-  
-  .nav-dots {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-  }
-  
-  .nav-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: #ddd;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-  
-  .nav-dot.active {
-    background: #666;
-    transform: scale(1.2);
-  }
-  
-  .nav-dot:hover {
-    background: #999;
-  }
-  
-  /* Адаптивность */
-  @media (max-width: 640px) {
-    .minimal-modal-overlay {
-      padding: 10px;
-    }
-    
-    .minimal-modal-container {
-      max-width: 100%;
-      max-height: 95vh;
-    }
-    
-    .modal-image-wrapper {
-      padding: 15px;
-      min-height: 150px;
-      max-height: 250px;
-    }
-    
-    .modal-info {
-      padding: 15px;
-    }
-    
-    .modal-title {
-      font-size: 16px;
-    }
-    
-    .modal-description {
-      font-size: 13px;
-    }
-    
-    .modal-nav {
-      padding: 12px 15px;
-    }
-    
-    .nav-btn {
-      padding: 6px;
-    }
-  }
-  
-  @media (max-width: 380px) {
-    .modal-image-wrapper {
-      min-height: 120px;
-      max-height: 200px;
-    }
-    
-    .modal-header {
-      padding: 12px 15px;
-    }
-    
-    .modal-info {
-      padding: 12px 15px;
-    }
-  }
-  
-  /* Стили для карусели */
-  .carousel-item {
-    transition: transform 0.6s ease-in-out;
-  }
-  
-  .carousel-item .row {
-    margin: 0 -10px;
-  }
-  
-  .carousel-item .col-md-4 {
-    padding: 0 10px;
-  }
-  
-  /* Предотвращение скролла */
-  body.modal-open {
-    overflow: hidden;
-    position: fixed;
-    width: 100%;
-    height: 100%;
-  }
+}
 </style>
 
 <script>
-  import axios from 'axios';
-  import { API_URL, MEDIA_API_URL } from '@/config.js';
-  
-  export default {
-    name: 'Case',
-    data() {
-      return {
-        cases: [],
-        MEDIA_API_URL,
-        selectedCase: null,
-        currentIndex: 0,
-        isModalOpen: false,
-        isMobile: window.innerWidth < 768
-      };
-    },
-    computed: {
-      desktopChunks() {
-        const chunks = [];
-        for (let i = 0; i < this.cases.length; i += 3) {
-          chunks.push(this.cases.slice(i, i + 3));
-        }
-        return chunks;
+import axios from 'axios';
+import { API_URL, MEDIA_API_URL } from '@/config.js';
+
+export default {
+  name: 'Case',
+  data() {
+    return {
+      cases: [],
+      MEDIA_API_URL,
+      selectedCase: null,
+      currentIndex: 0,
+      isModalOpen: false,
+      isMobile: window.innerWidth < 768,
+      loading: true,
+      error: null
+    };
+  },
+  computed: {
+    desktopChunks() {
+      if (!this.cases.length) return [];
+      
+      const chunks = [];
+      for (let i = 0; i < this.cases.length; i += 3) {
+        chunks.push(this.cases.slice(i, i + 3));
       }
-    },
-    async created() {
+      return chunks;
+    }
+  },
+  async created() {
+    await this.fetchCasesData();
+    window.addEventListener('resize', this.checkMobile);
+  },
+  methods: {
+    async fetchCasesData() {
       try {
+        this.loading = true;
         const response = await axios.get(API_URL);
         this.cases = response.data.cases || [];
       } catch (error) {
         console.error('Error fetching cases data:', error);
+        this.error = 'Не удалось загрузить данные кейсов';
         this.cases = [];
+      } finally {
+        this.loading = false;
       }
     },
-    methods: {
-      getCaseIndex(caseItem) {
-        return this.cases.findIndex(item => item.id === caseItem.id);
-      },
+
+    getImageUrl(caseItem) {
+      const imagePath = caseItem.images && caseItem.images[0] 
+        ? caseItem.images[0].image 
+        : caseItem.image;
       
-      openModal(index) {
-        this.currentIndex = 0; // Сбрасываем на первое изображение
-        this.selectedCase = this.cases[index];
-        this.isModalOpen = true;
-        
-        // Правильное блокирование скролла
-        document.documentElement.style.overflow = 'hidden';
-        document.body.style.overflow = 'hidden';
-      }, 
+      if (!imagePath) return '/assets/img/placeholder.jpg';
       
-      closeModal() { 
-        this.isModalOpen = false; 
-        
-        // Восстановление скролла
-        document.documentElement.style.overflow = '';
-        document.body.style.overflow = '';
-      }, 
+      return `${MEDIA_API_URL}${imagePath}`;
+    },
+
+    getModalImageUrl(imageObj) {
+      if (!imageObj?.image) return '';
+      return `${MEDIA_API_URL}${imageObj.image}`;
+    },
+
+    getCaseIndex(caseItem) {
+      return this.cases.findIndex(item => item.id === caseItem.id);
+    },
+
+    openModal(index) {
+      this.currentIndex = 0;
+      this.selectedCase = this.cases[index];
+      this.isModalOpen = true;
       
-      nextCaseImage() {
-        if (this.selectedCase?.images?.length > 0) {
-          this.currentIndex = (this.currentIndex + 1) % this.selectedCase.images.length;
-        }
-      },
-      
-      prevCaseImage() {
-        if (this.selectedCase?.images?.length > 0) {
-          this.currentIndex = (this.currentIndex - 1 + this.selectedCase.images.length) % this.selectedCase.images.length;
-        }
-      },
-      
-      goToImage(index) {
-        if (this.selectedCase?.images?.length > index) {
-          this.currentIndex = index;
-        }
-      },
-      
-      checkMobile() {
-        this.isMobile = window.innerWidth < 768;
+      document.documentElement.style.overflow = 'hidden';
+      document.body.style.overflow = 'hidden';
+    },
+
+    closeModal() {
+      this.isModalOpen = false;
+      document.documentElement.style.overflow = '';
+      document.body.style.overflow = '';
+    },
+
+    nextCaseImage() {
+      if (this.selectedCase?.images?.length > 0) {
+        this.currentIndex = (this.currentIndex + 1) % this.selectedCase.images.length;
       }
     },
-    mounted() { 
-      // Обработка Escape
-      const handleEscape = (e) => { 
-        if (e.key === 'Escape' && this.isModalOpen) { 
-          this.closeModal(); 
-        } 
-      };
-      
-      document.addEventListener('keydown', handleEscape);
-      window.addEventListener('resize', this.checkMobile);
-      
-      // Сохраняем ссылку для удаления
-      this._handleEscape = handleEscape;
+
+    prevCaseImage() {
+      if (this.selectedCase?.images?.length > 0) {
+        this.currentIndex = (this.currentIndex - 1 + this.selectedCase.images.length) % this.selectedCase.images.length;
+      }
     },
-    beforeUnmount() {
-      document.removeEventListener('keydown', this._handleEscape);
-      window.removeEventListener('resize', this.checkMobile);
+
+    goToImage(index) {
+      if (this.selectedCase?.images?.length > index) {
+        this.currentIndex = index;
+      }
+    },
+
+    checkMobile() {
+      this.isMobile = window.innerWidth < 768;
     }
+  },
+  mounted() {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && this.isModalOpen) {
+        this.closeModal();
+      }
+    };
+    
+    document.addEventListener('keydown', handleEscape);
+    this._handleEscape = handleEscape;
+  },
+  beforeUnmount() {
+    document.removeEventListener('keydown', this._handleEscape);
+    window.removeEventListener('resize', this.checkMobile);
   }
+}
 </script>

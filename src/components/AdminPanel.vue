@@ -32,6 +32,20 @@
           </div>
         </div>
 
+        <div class="stat-card" @click="goToLogo">
+          <div class="card-content">
+            <h2>Логотипы</h2>
+            <p>12</p>
+          </div>
+        </div>
+
+        <div class="stat-card" @click="goToNews">
+          <div class="card-content">
+            <h2>Новости</h2>
+            <p>12</p>
+          </div>
+        </div>
+
         <!-- Длинный блок откликов -->
         <div class="long-stat-card" @click="goToRequests">
           <div class="card-content">
@@ -83,6 +97,12 @@ export default {
     goToRequests() {
       // Переход на страницу пользователей
       this.$router.push({ name: 'AdminRequests' });
+    },
+    goToNews() {
+      this.$router.push({ name: 'AdminNews' });
+    },
+    goToLogo() {
+      this.$router.push({ name: 'AdminLogo' });
     },
   },
 };

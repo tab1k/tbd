@@ -205,12 +205,20 @@ export default {
     },
 
     // Удаление текущего изображения (при редактировании)
-    removeCurrentImage(index) {
+    async removeCurrentImage(index) {
       const image = this.caseForm.images[index];
       if (image && image.id) {
-        this.imagesToDelete.push(image.id);
+        try {
+          // Отправка запроса на сервер для удаления изображения
+          await axios.delete(`${MEDIA_API_URL}/admin-panel/case-images/${image.id}/`);
+          console.log('Изображение удалено:', image.id);
+
+          // Удаляем изображение из списка в интерфейсе
+          this.caseForm.images.splice(index, 1);
+        } catch (error) {
+          console.error('Ошибка при удалении изображения:', error);
+        }
       }
-      this.caseForm.images.splice(index, 1);
     },
 
     // Отправка формы

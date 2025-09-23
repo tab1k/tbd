@@ -1,6 +1,7 @@
 <template>
   <section class="hero d-flex align-items-center">
-    <div class="container-mode mb-5">
+    <div class="container-mode">
+      <!-- Левая текстовая часть -->
       <div class="hero-text text-lg-start">
         <h1>
           Создаём тренды. <br />
@@ -9,7 +10,7 @@
         <p>
           <b>Turan Business Development — коммуникационное агентство,</b>
           объединяющее опыт в стратегических коммуникациях, GR, PR и управлении
-          репутацией. Мы создаём устойчивые смыслы, формируем доверие и
+          репутацией. Мы создаём устойчивые смыслы, формируем довериеи
           выстраиваем диалог между бизнесом, государством и обществом.
         </p>
         <p>
@@ -21,6 +22,111 @@
           ЗАКАЗАТЬ КОНСУЛЬТАЦИЮ
         </a>
       </div>
+
+      <!-- ПРАВАЯ ЧАСТЬ -->
+      <div class="hero-right">
+        <!-- ВАЖНО: общий relative-контейнер для картинки и оверлеев -->
+        <div 
+          class="media-wrap"
+          @touchstart="handleTouchStart"
+          @touchend="handleTouchEnd"
+        >
+          <!-- Skeleton loader -->
+          <div v-if="isLoading" class="loading-placeholder">
+            <div class="skeleton-image"></div>
+            <div class="loading-text">Загрузка новостей...</div>
+          </div>
+          
+          <!-- Ошибка загрузки -->
+          <div v-else-if="error" class="error-placeholder">
+            <div class="error-message">{{ error }}</div>
+            <button @click="loadNewsData" class="retry-btn">Попробовать снова</button>
+          </div>
+          
+          <!-- Слайдер с новостями -->
+          <div
+            v-else
+            v-for="(slide, index) in slides"
+            :key="slide.id || index"
+            class="slide"
+            :class="{ active: currentSlide === index }"
+          >
+            <img 
+              :src="slide.image" 
+              class="hero-photo" 
+              :alt="slide.title || 'news image'" 
+              @error="handleImageError"
+              loading="lazy"
+            />
+
+            <!-- Overlay с заголовком новости -->
+            <div v-if="slide.title" class="news-overlay">
+              <h3 class="news-title">{{ slide.title }}</h3>
+              <p v-if="slide.description" class="news-description">{{ slide.description }}</p>
+              <span v-if="slide.created_at" class="news-date">
+                {{ formatDate(slide.created_at) }}
+              </span>
+            </div>
+
+            <!-- Пузырёк-отзыв -->
+            <div class="testimonial">
+              <img :src="slide.testimonial.avatar" alt="avatar" class="t-avatar" />
+              <div class="t-text">
+                <span class="t-name">{{ slide.testimonial.name }}</span>
+                <p class="t-msg">{{ slide.testimonial.text }}</p>
+              </div>
+            </div>
+
+            <!-- Карточка рейтинга -->
+            <div class="rating-card">
+              <ul class="avatar-stack">
+                <li v-for="(src, i) in avatars.slice(0, 4)" :key="i" class="stack-item">
+                  <img :src="src" alt="avatar" />
+                </li>
+                <li class="stack-item more">
+                  <div><span>500+</span></div>
+                </li>
+              </ul>
+              <p class="metric">{{ metricLabel }}</p>
+              <p class="score">
+                <i class="star">★</i>
+                <span class="value">{{ rating.toFixed(1) }}</span
+                ><span class="out-of">/{{ ratingOutOf }}</span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Точки навигации -->
+        <div v-if="!isLoading && !error && slides.length > 0" class="dots">
+          <span
+            v-for="(slide, index) in slides"
+            :key="slide.id || index"
+            :class="{ active: currentSlide === index }"
+            class="dot"
+            @click="goToSlide(index)"
+          ></span>
+        </div>
+
+        <!-- Стрелки навигации -->
+        <div v-if="!isLoading && !error && slides.length > 1" class="nav-arrows">
+          <button 
+            class="nav-arrow nav-prev" 
+            @click="prevSlide"
+            aria-label="Предыдущий слайд"
+          >
+            ‹
+          </button>
+          <button 
+            class="nav-arrow nav-next" 
+            @click="nextSlide"
+            aria-label="Следующий слайд"
+          >
+            ›
+          </button>
+        </div>
+      </div>
+      <!-- /ПРАВАЯ ЧАСТЬ -->
     </div>
 
     <!-- стрелка вниз -->
@@ -33,8 +139,13 @@
 </template>
 
 <script>
-import { ref } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import PopupContact from "@/components/home/PopupContact.vue";
+import axios from 'axios';
+import { API_URL, MEDIA_API_URL } from '@/config.js';
+
+// Импортируем изображения как fallback
+import img01 from '@/assets/img/01.jpg';
 
 export default {
   name: "Hero",
@@ -43,244 +154,740 @@ export default {
     const showPopup = ref(false);
     const openPopup = () => (showPopup.value = true);
     const closePopup = () => (showPopup.value = false);
-    return { showPopup, openPopup, closePopup };
+
+    const avatars = ref([
+      "https://i.pravatar.cc/80?img=1",
+      "https://i.pravatar.cc/80?img=2",
+      "https://i.pravatar.cc/80?img=3",
+      "https://i.pravatar.cc/80?img=4",
+    ]);
+    const metricLabel = ref("Total visitors per month");
+    const rating = ref(4.8);
+    const ratingOutOf = ref(5.0);
+
+    const slides = ref([]);
+    const isLoading = ref(true);
+    const error = ref(null);
+    
+    // Fallback данные на случай ошибки загрузки
+    const fallbackSlides = [
+      {
+        image: img01,
+        title: "Создаём тренды",
+        description: "Управляем смыслами",
+        testimonial: {
+          name: "Dennis Barrett",
+          text: "🔥 Folio team nailed it!",
+          avatar: "https://i.pravatar.cc/100?img=8",
+        },
+      },
+      {
+        image: img01,
+        title: "Стратегические коммуникации", 
+        description: "Эффективные решения",
+        testimonial: {
+          name: "John Doe",
+          text: "Amazing work on the project!",
+          avatar: "https://i.pravatar.cc/100?img=9",
+        },
+      },
+      {
+        image: img01,
+        title: "Управление репутацией",
+        description: "Профессиональный подход",
+        testimonial: {
+          name: "Jane Smith",
+          text: "The best team ever!",
+          avatar: "https://i.pravatar.cc/100?img=10",
+        },
+      },
+    ];
+    
+    const currentSlide = ref(0);
+    let autoSlideInterval = null;
+
+    // Загрузка данных из API
+    const loadNewsData = async () => {
+      try {
+        isLoading.value = true;
+        error.value = null;
+        
+        console.log('Загружаем данные из:', API_URL);
+        const response = await axios.get(API_URL);
+        console.log('Полученные данные:', response.data);
+        
+        if (response.data && response.data.news && response.data.news.length > 0) {
+          console.log('Найдено новостей:', response.data.news.length);
+          
+          // Преобразуем новости в формат слайдов
+          slides.value = response.data.news.map((newsItem, index) => {
+            const imageUrl = newsItem.image ? `${MEDIA_API_URL}${newsItem.image}` : img01;
+            console.log(`Новость ${index + 1}: ${newsItem.title}, изображение: ${imageUrl}`);
+            
+            return {
+              id: newsItem.id,
+              image: imageUrl,
+              title: newsItem.title,
+              description: newsItem.description,
+              created_at: newsItem.created_at,
+              testimonial: {
+                name: `Читатель ${index + 1}`,
+                text: "📰 Актуальные новости!",
+                avatar: `https://i.pravatar.cc/100?img=${index + 8}`,
+              },
+            };
+          });
+        } else {
+          console.log('Новости не найдены, используем fallback');
+          slides.value = fallbackSlides;
+        }
+      } catch (err) {
+        console.error('Ошибка загрузки новостей:', err);
+        console.error('Детали ошибки:', err.response?.data || err.message);
+        error.value = 'Не удалось загрузить новости';
+        slides.value = fallbackSlides;
+      } finally {
+        isLoading.value = false;
+      }
+    };
+
+    // Touch/Swipe логика
+    const touchStart = ref({ x: 0, y: 0 });
+    const touchEnd = ref({ x: 0, y: 0 });
+    const minSwipeDistance = 50;
+
+    const handleTouchStart = (e) => {
+      touchStart.value = {
+        x: e.changedTouches[0].screenX,
+        y: e.changedTouches[0].screenY
+      };
+    };
+
+    const handleTouchEnd = (e) => {
+      touchEnd.value = {
+        x: e.changedTouches[0].screenX,
+        y: e.changedTouches[0].screenY
+      };
+      handleSwipe();
+    };
+
+    const handleSwipe = () => {
+      const distanceX = touchStart.value.x - touchEnd.value.x;
+      const distanceY = touchStart.value.y - touchEnd.value.y;
+      
+      // Проверяем, что горизонтальный свайп больше вертикального
+      if (Math.abs(distanceX) > Math.abs(distanceY) && Math.abs(distanceX) > minSwipeDistance) {
+        if (distanceX > 0) {
+          // Свайп влево - следующий слайд
+          nextSlide();
+        } else {
+          // Свайп вправо - предыдущий слайд
+          prevSlide();
+        }
+        // Перезапускаем автопрокрутку после взаимодействия
+        restartAutoSlide();
+      }
+    };
+
+    // Обработка ошибки загрузки изображения
+    const handleImageError = (event) => {
+      console.error('Не удалось загрузить изображение:', event.target.src);
+      console.log('Полный URL изображения:', event.target.src);
+      console.log('MEDIA_API_URL:', MEDIA_API_URL);
+      
+      // Устанавливаем fallback изображение
+      event.target.src = img01;
+    };
+
+    // Форматирование даты
+    const formatDate = (dateString) => {
+      if (!dateString) return '';
+      try {
+        return new Date(dateString).toLocaleDateString('ru-RU');
+      } catch (e) {
+        return '';
+      }
+    };
+
+    // Навигация слайдов
+    const nextSlide = () => {
+      currentSlide.value = (currentSlide.value + 1) % slides.value.length;
+    };
+
+    const prevSlide = () => {
+      currentSlide.value = currentSlide.value === 0 
+        ? slides.value.length - 1 
+        : currentSlide.value - 1;
+    };
+
+    const goToSlide = (index) => {
+      currentSlide.value = index;
+      restartAutoSlide();
+    };
+
+    // Автоматическая прокрутка слайдов
+    const startAutoSlide = () => {
+      if (slides.value.length > 1) {
+        autoSlideInterval = setInterval(() => {
+          nextSlide();
+        }, 4000);
+      }
+    };
+
+    const stopAutoSlide = () => {
+      if (autoSlideInterval) {
+        clearInterval(autoSlideInterval);
+        autoSlideInterval = null;
+      }
+    };
+
+    const restartAutoSlide = () => {
+      stopAutoSlide();
+      startAutoSlide();
+    };
+
+    // Управление клавиатурой
+    const handleKeydown = (e) => {
+      if (e.key === 'ArrowLeft') {
+        prevSlide();
+        restartAutoSlide();
+      } else if (e.key === 'ArrowRight') {
+        nextSlide();
+        restartAutoSlide();
+      }
+    };
+
+    onMounted(() => {
+      loadNewsData(); // Загружаем данные при монтировании
+      // Добавляем обработчик клавиатуры
+      document.addEventListener('keydown', handleKeydown);
+    });
+
+    onUnmounted(() => {
+      stopAutoSlide();
+      document.removeEventListener('keydown', handleKeydown);
+    });
+
+    // Следим за изменением slides и запускаем автопрокрутку
+    const startAutoSlideWhenReady = () => {
+      if (!isLoading.value && slides.value.length > 0) {
+        startAutoSlide();
+      }
+    };
+
+    // Запускаем автопрокрутку после загрузки данных
+    const unwatchLoading = ref(null);
+    onMounted(() => {
+      unwatchLoading.value = () => {
+        if (!isLoading.value && slides.value.length > 0) {
+          setTimeout(startAutoSlide, 100);
+        }
+      };
+    });
+
+    return { 
+      showPopup, 
+      openPopup, 
+      closePopup, 
+      avatars, 
+      metricLabel, 
+      rating, 
+      ratingOutOf, 
+      slides, 
+      currentSlide, 
+      goToSlide,
+      handleImageError,
+      handleTouchStart,
+      handleTouchEnd,
+      nextSlide,
+      prevSlide,
+      isLoading,
+      error,
+      loadNewsData,
+      formatDate,
+      MEDIA_API_URL
+    };
   },
 };
 </script>
 
 <style scoped>
+/* Состояния загрузки и ошибки */
+.loading-placeholder, .error-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  background: #f8f9fa;
+  border-radius: 24px;
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.skeleton-image {
+  width: 100%;
+  height: 300px;
+  background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 16px;
+  margin-bottom: 20px;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.loading-text {
+  color: #666;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.error-message {
+  color: #dc3545;
+  font-size: 16px;
+  margin-bottom: 15px;
+}
+
+.retry-btn {
+  background: #000f42;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.3s;
+}
+
+.retry-btn:hover {
+  background: #001a6d;
+}
+
+/* Overlay для заголовков новостей */
+.news-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+  color: white;
+  padding: 40px 20px 20px;
+  border-radius: 0 0 24px 24px;
+}
+
+.news-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  line-height: 1.3;
+}
+
+.news-description {
+  font-size: 14px;
+  margin: 0 0 8px 0;
+  opacity: 0.9;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.news-date {
+  font-size: 12px;
+  opacity: 0.7;
+  font-weight: 500;
+}
+
+/* активный слайд */
+.slide {
+  display: none;
+  position: relative;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.slide.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* точки навигации */
+.dots {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  z-index: 3;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #ccc;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.dot.active {
+  background-color: #000f42;
+}
+
+/* Стрелки навигации */
+.nav-arrows {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  transform: translateY(-50%);
+  display: flex;
+  justify-content: space-between;
+  padding: 0 -20px;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.nav-arrow {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  color: #000f42;
+  font-size: 24px;
+  font-weight: bold;
+  cursor: pointer;
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  opacity: 0.8;
+}
+
+.nav-arrow:hover {
+  background: #fff;
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.nav-prev {
+  margin-left: -20px;
+}
+
+.nav-next {
+  margin-right: -20px;
+}
+
+/* базовые стили */
 .hero {
   min-height: 80vh;
-  background: #ebecf0 url("@/assets/img/hero_right.png") no-repeat right bottom;
-  background-size: auto 100%; /* Всегда на всю высоту */
+  background: #ebecf0;
   position: relative;
   overflow: hidden;
   display: flex;
   align-items: center;
+  padding: 30px 20px;
 }
 
-.hero-text {
-  max-width: 800px;
-}
+.hero-text { max-width: 800px; }
+.hero-text p { max-width: 740px; }
+.container-mode { width: 100%; padding-left: 80px; padding-right: 80px; display: flex; align-items: flex-start; gap: 40px; }
 
-.hero-text p {
-  max-width: 740px;
-}
-
-/* Контейнер */
-.container-mode {
-  width: 100%;
-  padding-left: 80px;
-  padding-right: 80px;
-}
-
-/* Заголовок */
 .hero-text h1 {
-  font-size: 72px;
+  font-size: clamp(28px, 5vw, 72px);
   font-weight: 700;
   line-height: 1.2;
   color: #000f42;
   margin-bottom: 20px;
 }
 
-/* Тексты */
 .hero-text p {
-  font-size: 14px;
+  font-size: clamp(14px, 2vw, 18px);
   color: #576182;
-  line-height: 1.5;
+  line-height: 1.6;
   margin-bottom: 16px;
+  max-width: 72ch;
+  word-break: break-word;
+  hyphens: auto;
 }
 
-/* Кнопка */
 .btn-accent {
   background: #000f42;
   color: #fff;
   padding: 14px 32px;
   border-radius: 50px;
   font-weight: 400;
-  font-size: 16px;
+  font-size: clamp(14px, 1.6vw, 16px);
   text-decoration: none;
-  transition: all 0.3s ease;
+  transition: all .3s ease;
   display: inline-block;
 }
 
-.btn-accent:hover {
-  background: #001a6d;
+.btn-accent:hover { 
+  background: #001a6d; 
 }
 
-/* Стрелка вниз */
-.scroll-down {
-  position: absolute;
-  bottom: 15px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  background: #000f42;
+.scroll-down { 
+  position: absolute; 
+  bottom: 15px; 
+  left: 50%; 
+  transform: translateX(-50%); 
+  width: 42px; 
+  height: 42px; 
+  border-radius: 50%; 
+  background: #000f42; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  color: #fff; 
+  font-size: 20px; 
+  animation: bounce 1.5s infinite, glow 2s infinite alternate; 
+  cursor: pointer; 
+  z-index: 5; 
+}
+
+@keyframes bounce { 
+  0%,20%,50%,80%,100% { transform: translate(-50%,0);} 
+  40% { transform: translate(-50%,8px);} 
+  60% { transform: translate(-50%,4px);} 
+}
+
+@keyframes glow { 
+  0% { box-shadow: 0 0 5px rgba(0,15,66,.4);} 
+  100% { box-shadow: 0 0 15px rgba(0,15,66,.8);} 
+}
+
+/* правая часть */
+.hero-right {
+  flex: 1 1 50%;
   display: flex;
-  align-items: center;
   justify-content: center;
-  color: #fff;
-  font-size: 20px;
-  animation: bounce 1.5s infinite, glow 2s infinite alternate;
-  cursor: pointer;
-  z-index: 5;
+  align-items: center;
+  position: relative;
 }
 
-@keyframes bounce {
-  0%,
-  20%,
-  50%,
-  80%,
-  100% {
-    transform: translate(-50%, 0);
-  }
-  40% {
-    transform: translate(-50%, 8px);
-  }
-  60% {
-    transform: translate(-50%, 4px);
-  }
+.media-wrap {
+  position: relative;
+  width: min(560px, 100%);
+  border-radius: 24px;
+  touch-action: pan-y;
+  user-select: none;
 }
 
-@keyframes glow {
-  0% {
-    box-shadow: 0 0 5px rgba(0, 15, 66, 0.4);
-  }
-  100% {
-    box-shadow: 0 0 15px rgba(0, 15, 66, 0.8);
-  }
+.hero-photo {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 24px;
+  min-height: 400px;
+  object-fit: cover;
+  background-color: #f0f0f0;
 }
 
-/* Большие десктопы (1200px+) */
-@media (min-width: 1200px) {
-  .hero {
-    background-position: right bottom;
-    background-size: auto 100%;
-  }
+/* всплывающий отзыв */
+.testimonial {
+  position: absolute;
+  top: 16px; 
+  left: -32px;
+  display: inline-flex; 
+  align-items: center; 
+  gap: 10px;
+  background: #fff; 
+  border-radius: 999px;
+  padding: 6px 16px 6px 6px;
+  box-shadow: 0 12px 30px rgba(0,0,0,.12);
+  z-index: 2;
 }
 
-/* Средние десктопы (992px - 1200px) */
-@media (max-width: 1200px) {
-  .hero {
-    background-position: 50% bottom;
-    background-size: auto 100%;
-  }
-  
-  .hero-text h1 {
-    font-size: 60px;
-  }
-  
+.t-avatar { 
+  width: 40px; 
+  height: 40px; 
+  border-radius: 50%; 
+  object-fit: cover; 
+}
+
+.t-text { 
+  line-height: 1.1; 
+}
+
+.t-name { 
+  display: block; 
+  font-size: 12px; 
+  font-weight: 700; 
+  color: #1f2348; 
+}
+
+.t-msg { 
+  font-size: 12px; 
+  margin: 0; 
+  color: #4a5272; 
+}
+
+/* карточка рейтинга */
+.rating-card {
+  position: absolute;
+  right: -30px;       
+  bottom: -30px;
+  background: #fff;
+  color: #1f2348;
+  border-radius: 24px;
+  padding: 30px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.12);
+  width: 240px;
+  height: 190px;
+  z-index: 2;
+}
+
+.avatar-stack { 
+  list-style: none; 
+  padding: 0; 
+  margin: 0 0 10px 0; 
+  display: flex; 
+  align-items: center; 
+}
+
+.stack-item { 
+  width: 36px; 
+  height: 36px; 
+  border-radius: 50%; 
+  overflow: hidden; 
+  border: 2px solid #fff; 
+  margin-left: -8px; 
+  box-shadow: 0 4px 10px rgba(0,0,0,.08); 
+}
+
+.stack-item:first-child { 
+  margin-left: 0; 
+}
+
+.stack-item img { 
+  width: 100%; 
+  height: 100%; 
+  object-fit: cover; 
+  display: block; 
+}
+
+.stack-item.more > div { 
+  width: 100%; 
+  height: 100%; 
+  border-radius: 50%; 
+  background: #0d0f21; 
+  color: #fff; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  font-weight: 700; 
+  font-size: 12px; 
+}
+
+.metric { 
+  margin: 6px 0 10px; 
+  color: #5a6286; 
+  font-size: 14px; 
+}
+
+.score { 
+  margin: 0; 
+  font-weight: 700; 
+  color: #1f2348; 
+  display: flex; 
+  align-items: center; 
+  gap: 6px; 
+}
+
+.star { 
+  color: #ffb400; 
+  font-size: 16px; 
+}
+
+.value { 
+  font-size: 22px; 
+}
+
+.out-of { 
+  opacity: .7; 
+}
+
+/* адаптивность */
+@media (max-width: 1296px) {
   .container-mode {
-    padding-left: 60px;
-    padding-right: 60px;
+    flex-direction: column; 
+    gap: 24px; 
+    padding: 0;
+  }
+  .hero-right { 
+    align-self: stretch; 
+  }
+  .media-wrap { 
+    width: 100%; 
   }
 }
 
-/* Планшеты (768px - 992px) */
-@media (max-width: 992px) {
-  .hero {
-    background-position: -130% bottom;
-    background-size: auto 100%;
+@media (max-width: 768px) {
+  .nav-arrows {
+    padding: 0 -15px;
   }
   
-  .hero-text h1 {
-    font-size: 48px;
+  .nav-arrow {
+    width: 35px;
+    height: 35px;
+    font-size: 20px;
   }
   
-  .hero-text p {
+  .nav-prev {
+    margin-left: -15px;
+  }
+  
+  .nav-next {
+    margin-right: -15px;
+  }
+}
+
+@media (max-width: 576px) {
+  .rating-card { 
+    display: none; 
+  }
+  .testimonial { 
+    left: 8px; 
+    top: 8px; 
+  }
+  
+  .nav-arrows {
+    display: none;
+  }
+  
+  .dot {
+    width: 12px;
+    height: 12px;
+  }
+  
+  .news-overlay {
+    padding: 30px 15px 15px;
+  }
+  
+  .news-title {
+    font-size: 16px;
+  }
+  
+  .news-description {
     font-size: 13px;
   }
-  
-  .container-mode {
-    padding-left: 40px;
-    padding-right: 40px;
-  }
 }
-
-/* Большие мобилки (576px - 768px) */
-@media (max-width: 768px) {
-  .hero {
-    background-position: 235% bottom;
-    background-size: auto 100%;
-    min-height: 60vh;
-  }
-  
-  .hero-text h1 {
-    font-size: 36px;
-  }
-  
-  .hero-text p {
-    font-size: 14px;
-  }
-  
-  .container-mode {
-    padding-left: 30px;
-    padding-right: 30px;
-  }
-}
-
-/* Мобилки (480px - 576px) */
-@media (max-width: 576px) {
-  .hero {
-    background-position: -150% bottom;
-    background-size: auto 100%;
-    padding: 30px 60px 50px 16px;
-  }
-  
-  .hero-text h1 {
-    font-size: 32px;
-  }
-  
-  .hero-text p {
-    font-size: 12px;
-  }
-  
-  .container-mode {
-    padding-left: 0px;
-    padding-right: 0px;
-  }
-  
-  .btn-accent {
-    padding: 12px 24px;
-    font-size: 0.9rem;
-  }
-}
-
-/* Очень маленькие экраны (< 480px) */
-@media (max-width: 480px) {
-  .hero {
-    background-position: -350% bottom;
-    background-size: auto 100%;
-    min-height: 50vh;
-  }
-  
-  .hero-text h1 {
-    font-size: 28px;
-  }
-  
-  .hero-text p {
-    font-size: 11px;
-  }
-}
-
-
-/* Очень маленькие экраны (< 480px) */
-@media (max-width: 375px) {
-  .hero {
-    background-position: -110% bottom;
-    background-size: auto 100%;
-    min-height: 50vh;
-  }
-  
-  .hero-text h1 {
-    font-size: 28px;
-  }
-  
-  .hero-text p {
-    font-size: 11px;
-  }
-}
-
 </style>

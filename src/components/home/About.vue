@@ -317,7 +317,7 @@ export default {
   }
 
   .btn-group {
-    justify-content: center;
+    justify-content: left;
   }
   
   .btn-outline-accent {
