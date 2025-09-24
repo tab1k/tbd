@@ -73,7 +73,7 @@
 </template>
 
 <script>
-export const MEDIA_API_URL = 'http://192.168.0.14:8000';
+import { API_URL, MEDIA_API_URL } from '@/config';
 
 export default {
   name: 'AdminPanel',
