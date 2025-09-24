@@ -588,6 +588,12 @@ export default {
   display: flex;
   align-items: center;
   padding: 30px 20px;
+  
+  /* Добавляем фоновое изображение справа */
+  background-image: url('@/assets/img/hero_right.png');
+  background-position: right center;
+  background-repeat: no-repeat;
+  background-size: contain; /* или cover, в зависимости от нужного эффекта */
 }
 
 .hero-text { max-width: 800px; }
@@ -808,6 +814,10 @@ export default {
     gap: 24px; 
     padding: 0;
   }
+  .hero {
+    background-size: 50% auto; /* Уменьшаем размер изображения на планшетах */
+    background-position: right bottom;
+  }
   .hero-right { 
     align-self: stretch; 
   }
@@ -818,6 +828,7 @@ export default {
 
 /* Для мобильных устройств - адаптация текста */
 @media (max-width: 768px) {
+
   .nav-arrows {
     padding: 0 -15px;
   }
