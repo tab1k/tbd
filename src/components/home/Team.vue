@@ -1,6 +1,6 @@
 <template>
   <section id="team">
-    <div class="container-mode">
+    <div class="container-mode mt-5">
       <h2 class="mb-3">Команда</h2>
       <div class="row text-center g-2">
         <!-- Skeleton loading -->
