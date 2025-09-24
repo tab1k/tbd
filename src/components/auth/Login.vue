@@ -11,7 +11,8 @@
 </template>
 
 <script>
-import API from "@/axios-config";
+import { LOGIN_URL } from '@/config.js';
+import axios from 'axios';
 
 export default {
   data() {
@@ -24,20 +25,45 @@ export default {
   methods: {
     async login() {
       try {
-        const response = await API.post("/admin-panel/login/", {
+        console.log("Отправка запроса на логин...");
+        
+        const response = await axios.post(`${LOGIN_URL}/admin-panel/login/`, {
           username: this.username,
           password: this.password,
         });
 
+        console.log("Ответ сервера:", response.data);
+
+        if (!response.data.access) {
+          throw new Error("Токен доступа не получен");
+        }
+
         localStorage.setItem("access_token", response.data.access);
         localStorage.setItem("refresh_token", response.data.refresh);
 
-        this.$router.push("/admin");
+        console.log("Токены сохранены. Перенаправление на /admin");
+        
+        // Пробуем перенаправить
+        this.$router.push("/admin")
+          .then(() => console.log("Перенаправление успешно"))
+          .catch(err => console.error("Ошибка перенаправления:", err));
+          
       } catch (error) {
-        this.errorMessage = error.response?.data?.error || "Ошибка входа";
+        console.error("Ошибка входа:", error);
+        this.errorMessage = error.response?.data?.error || 
+                           error.message || 
+                           "Ошибка входа";
       }
     },
   },
+  
+  mounted() {
+    // Если уже авторизован - сразу перенаправляем
+    if (localStorage.getItem('access_token')) {
+      console.log("Пользователь уже авторизован, перенаправляем...");
+      this.$router.push('/admin');
+    }
+  }
 };
 </script>
 
