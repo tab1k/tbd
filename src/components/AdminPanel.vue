@@ -7,42 +7,42 @@
       </div>
 
       <div class="dashboard-stats">
-        <div class="stat-card" @click="goToUsers">
+        <div class="stat-card" @click="goToRequests">
           <div class="card-content">
-            <h2>Пользователи</h2>
-            <p>350</p>
+            <h2>Отклики</h2>
+            <p>{{ stats.requests }}</p>
           </div>
         </div>
         <div class="stat-card" @click="goToCases">
           <div class="card-content">
             <h2>Кейсы</h2>
-            <p>45</p>
+            <p>{{ stats.cases }}</p>
           </div>
         </div>
         <div class="stat-card" @click="goToTeams">
           <div class="card-content">
             <h2>Команда</h2>
-            <p>12</p>
+            <p>{{ stats.team_members }}</p>
           </div>
         </div>
         <div class="stat-card" @click="goToVideos">
           <div class="card-content">
             <h2>Видео</h2>
-            <p>12</p>
+            <p>{{ stats.videos }}</p>
           </div>
         </div>
 
         <div class="stat-card" @click="goToLogo">
           <div class="card-content">
             <h2>Логотипы</h2>
-            <p>12</p>
+            <p>{{ stats.logos }}</p>
           </div>
         </div>
 
         <div class="stat-card" @click="goToNews">
           <div class="card-content">
             <h2>Новости</h2>
-            <p>12</p>
+            <p>{{ stats.news }}</p>
           </div>
         </div>
 
@@ -50,7 +50,7 @@
         <div class="long-stat-card" @click="goToRequests">
           <div class="card-content">
             <h2>Отклики</h2>
-            <p>85</p>
+            <p>{{ stats.requests }}</p>
           </div>
         </div>
       </div>
@@ -68,34 +68,53 @@
         </div>
       </div>
     </div>
-	<router-view></router-view>
+    <router-view></router-view>
   </div>
-  
 </template>
 
-
 <script>
+export const MEDIA_API_URL = 'http://192.168.0.14:8000';
+
 export default {
   name: 'AdminPanel',
+  data() {
+    return {
+      stats: {
+        requests: 0,
+        videos: 0,
+        team_members: 0,
+        cases: 0,
+        news: 0,
+        logos: 0
+      }
+    };
+  },
+  mounted() {
+    this.fetchStats();
+  },
   methods: {
+    async fetchStats() {
+      try {
+        const response = await fetch(`${MEDIA_API_URL}/admin-panel/`);
+        const data = await response.json();
+        this.stats = data;
+      } catch (error) {
+        console.error('Ошибка при загрузке статистики:', error);
+      }
+    },
     goToUsers() {
-      // Переход на страницу пользователей
       this.$router.push({ name: 'AdminUsers' });
     },
     goToCases() {
-      // Переход на страницу пользователей
       this.$router.push({ name: 'AdminCases' });
     },
     goToTeams() {
-      // Переход на страницу пользователей
       this.$router.push({ name: 'AdminTeams' });
     },
     goToVideos() {
-      // Переход на страницу пользователей
       this.$router.push({ name: 'AdminVideos' });
     },
     goToRequests() {
-      // Переход на страницу пользователей
       this.$router.push({ name: 'AdminRequests' });
     },
     goToNews() {

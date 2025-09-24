@@ -11,19 +11,24 @@
         <div class="col-12 col-md-8">
           <!-- Скелетон при загрузке -->
           <div v-if="loading" class="partners-skeleton">
-            <div class="skeleton-logo" v-for="n in 5" :key="n"></div> <!-- 5 скелетонов -->
+            <div class="skeleton-logo" v-for="n in 6" :key="n"></div>
           </div>
 
           <div v-if="!loading && !error">
             <div class="partners-grid">
               <div class="partners-row">
-                <img v-for="logo in logos" :key="logo.id" :src="getImageUrl(logo)" :alt="logo.title" />
+                <img 
+                  v-for="logo in logos" 
+                  :key="logo.id" 
+                  :src="getImageUrl(logo.image)" 
+                  :alt="logo.title || 'partner logo'" 
+                  loading="lazy"
+                />
               </div>
             </div>
           </div>
 
-          <div v-else-if="loading" class="loading">Загрузка...</div>
-          <div v-else class="error">{{ error }}</div>
+          <div v-else-if="error" class="error">{{ error }}</div>
         </div>
       </div>
     </div>
@@ -32,7 +37,7 @@
 
 <script>
 import axios from 'axios';
-import { API_URL, MEDIA_API_URL } from '@/config.js'; // Измените на правильный путь к конфигу
+import { API_URL, MEDIA_API_URL } from '@/config.js';
 
 export default {
   name: "Partners",
@@ -50,8 +55,14 @@ export default {
     async fetchLogosData() {
       try {
         this.loading = true;
-        const response = await axios.get(API_URL); // Ваш URL API
-        this.logos = response.data.logo || [];
+        this.error = null;
+        
+        console.log('Загружаем логотипы из:', `${API_URL}/logo/`);
+        const response = await axios.get(`${API_URL}/logo/`);
+        console.log('Полученные логотипы:', response.data);
+        
+        this.logos = response.data || [];
+        
       } catch (error) {
         console.error('Ошибка при загрузке логотипов:', error);
         this.error = 'Не удалось загрузить логотипы';
@@ -62,10 +73,9 @@ export default {
     },
 
     // Метод для генерации полного URL для изображения
-    getImageUrl(logo) {
-      const imagePath = logo.image;
-      if (!imagePath) return '/assets/img/placeholder.jpg'; // Если изображения нет, используем заглушку
-      return `${MEDIA_API_URL}${imagePath}`; // Составляем полный путь к изображению
+    getImageUrl(imagePath) {
+      if (!imagePath) return '/assets/img/placeholder.jpg';
+      return `${MEDIA_API_URL}${imagePath}`;
     }
   }
 };
@@ -87,16 +97,16 @@ export default {
 /* Контейнер для строк */
 .partners-grid {
   display: flex;
-  overflow: hidden; /* скрываем элементы, выходящие за пределы контейнера */
+  overflow: hidden;
   justify-content: center;
 }
 
 /* Строка с логотипами */
 .partners-row {
   display: flex;
-  white-space: nowrap; /* все логотипы на одной строке */
-  animation: moveLeft 15s linear infinite; /* движение влево */
-  gap: 30px; /* расстояние между логотипами */
+  white-space: nowrap;
+  animation: moveLeft 15s linear infinite;
+  gap: 30px;
 }
 
 /* Анимация движения логотипов влево */
@@ -105,17 +115,16 @@ export default {
     transform: translateX(0);
   }
   100% {
-    transform: translateX(-50%); /* двигаем на половину ширины контейнера */
+    transform: translateX(-50%);
   }
 }
 
 /* Общий стиль для логотипов */
 .partners-row img {
   object-fit: contain;
-
   transition: all 0.3s ease;
   max-width: 100%;
-  margin-right: 30px;
+  max-height: 45px;
 }
 
 .partners-row img:hover {
@@ -123,20 +132,15 @@ export default {
   opacity: 1;
 }
 
-/* Размеры логотипов */
-.partners-row img {
-  max-height: 45px;
-}
-
 @media (min-width: 768px) {
-    .col-md-4 {
-        flex: 0 0 auto;
-        width: 15%;
-    }
-    .col-md-8 {
-        flex: 0 0 auto;
-        width: 85%;
-    }
+  .col-md-4 {
+    flex: 0 0 auto;
+    width: 15%;
+  }
+  .col-md-8 {
+    flex: 0 0 auto;
+    width: 85%;
+  }
 }
 
 /* Планшеты (768px - 992px) */
@@ -146,47 +150,29 @@ export default {
     padding-right: 40px;
   }
   
-
   .partners-text {
     font-size: 15px;
     text-align: center;
     margin-bottom: 30px !important;
   }
 
-  .partners-grid {
-    gap: 25px;
-  }
-
   .partners-row {
-    justify-content: center;
     gap: 25px;
-    flex-wrap: wrap;
   }
 
   .partners-row img {
     max-height: 40px;
-    flex: 0 0 calc(33.333% - 25px);
-    margin-bottom: 15px;
   }
 }
 
 /* Мобильная версия (до 768px) */
 @media (max-width: 768px) {
-  .partners-grid {
-    gap: 15px;
-  }
-
   .partners-row {
     gap: 20px;
-    flex-wrap: wrap;
-    justify-content: center;
-    display: flex;
   }
 
   .partners-row img {
     max-height: 30px;
-    flex: 0 0 calc(50% - 20px);
-    margin-bottom: 15px;
   }
 }
 
@@ -194,9 +180,6 @@ export default {
 @media (max-width: 576px) {
   .partners-row {
     gap: 15px;
-    justify-content: flex-start; /* выравнивание логотипов в одну линию */
-    flex-wrap: nowrap; /* логотипы остаются в одном ряду */
-    display: flex;
   }
 
   .container-mode {
@@ -206,7 +189,6 @@ export default {
 
   .partners-row img {
     max-height: 25px;
-    flex: 0 0 auto;
   }
 }
 
@@ -215,6 +197,7 @@ export default {
   display: flex;
   flex-wrap: nowrap;
   gap: 30px;
+  justify-content: center;
 }
 
 .skeleton-logo {
@@ -235,12 +218,6 @@ export default {
   100% {
     background-color: #ccc;
   }
-}
-
-.loading {
-  text-align: center;
-  font-size: 18px;
-  color: #666F8E;
 }
 
 .error {

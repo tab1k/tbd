@@ -14,7 +14,7 @@
       <input 
         v-model="searchQuery" 
         type="text" 
-        placeholder="Поиск по заголовку или описанию" 
+        placeholder="Поиск по заголовку, описанию или URL" 
         @input="filterNews" 
         class="search-input"
       />
@@ -31,6 +31,7 @@
           <tr>
             <th>Заголовок</th>
             <th>Описание</th>
+            <th>URL</th>
             <th>Дата</th>
             <th>Действия</th>
           </tr>
@@ -39,6 +40,12 @@
           <tr v-for="news in filteredNews" :key="news.id">
             <td>{{ news.title }}</td>
             <td>{{ news.description }}</td>
+            <td>
+              <a :href="news.url" target="_blank" class="url-link" v-if="news.url">
+                {{ truncateUrl(news.url) }}
+              </a>
+              <span v-else class="no-url">—</span>
+            </td>
             <td>{{ formatDate(news.created_at) }}</td>
             <td>
               <button @click="editNews(news)" class="action-btn edit-btn">Редактировать</button>
@@ -59,7 +66,6 @@
           <p class="section-title">Текущее изображение:</p>
           <div class="current-image-item">
             <img :src="getImageUrl(newsForm.image)" alt="Текущее изображение" class="current-image" />
-            <button type="button" @click="removeCurrentImage" class="remove-image-btn">×</button>
           </div>
         </div>
 
@@ -71,6 +77,11 @@
           <div class="form-group">
             <label for="description">Описание:</label>
             <textarea v-model="newsForm.description" id="description" required></textarea>
+          </div>
+          <div class="form-group">
+            <label for="url">URL ссылка:</label>
+            <input type="url" v-model="newsForm.url" id="url" placeholder="https://example.com" />
+            <small>Необязательное поле</small>
           </div>
           <div class="form-group">
             <label for="image">Изображение:</label>
@@ -102,38 +113,58 @@ export default {
       news: [],
       filteredNews: [],
       searchQuery: '',
-      isModalOpen: false,  // Проверяем, что оно true для отображения модалки
-      isEditMode: false,   // Режим редактирования
+      isModalOpen: false,
+      isEditMode: false,
       newsForm: {
         id: null,
         title: '',
         description: '',
+        url: '',
         image: null,
       },
       selectedImageFile: null,
     };
   },
   methods: {
-    getImageUrl(imagePath) {
-      return `${MEDIA_API_URL}${imagePath}`;
-    },
-
     async fetchNews() {
       try {
         const response = await axios.get(`${MEDIA_API_URL}/admin-panel/news/`);
-        this.news = response.data;
+        this.news = response.data.results || response.data;
         this.filteredNews = this.news;
       } catch (error) {
         console.error('Ошибка при загрузке новостей:', error);
       }
     },
 
+    filterNews() {
+      if (!this.searchQuery) {
+        this.filteredNews = this.news;
+        return;
+      }
+      
+      const query = this.searchQuery.toLowerCase();
+      this.filteredNews = this.news.filter(item => 
+        item.title.toLowerCase().includes(query) ||
+        item.description.toLowerCase().includes(query) ||
+        (item.url && item.url.toLowerCase().includes(query))
+      );
+    },
+
     openAddNewsModal() {
       this.isModalOpen = true;
       this.isEditMode = false;
-      this.newsForm = { id: null, title: '', description: '', image: null };
+      this.newsForm = { 
+        id: null, 
+        title: '', 
+        description: '', 
+        url: '', 
+        image: null 
+      };
       this.selectedImageFile = null;
-      this.$refs.imageInput.value = '';
+      
+      if (this.$refs.imageInput) {
+        this.$refs.imageInput.value = '';
+      }
     },
 
     closeModal() {
@@ -147,15 +178,19 @@ export default {
       }
     },
 
-    removeCurrentImage() {
-      this.newsForm.image = null;
-      this.selectedImageFile = null;
+    truncateUrl(url) {
+      if (url.length > 40) {
+        return url.substring(0, 40) + '...';
+      }
+      return url;
     },
 
     async submitForm() {
       const formData = new FormData();
       formData.append('title', this.newsForm.title);
       formData.append('description', this.newsForm.description);
+      formData.append('url', this.newsForm.url || '');
+      
       if (this.selectedImageFile) {
         formData.append('image', this.selectedImageFile);
       }
@@ -174,28 +209,50 @@ export default {
         this.closeModal();
       } catch (error) {
         console.error('Ошибка при отправке данных формы:', error);
+        console.error('Детали ошибки:', error.response?.data);
       }
-    },
-
-    filterNews() {
-      this.filteredNews = this.news.filter(news =>
-        news.title.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-        news.description.toLowerCase().includes(this.searchQuery.toLowerCase())
-      );
     },
 
     async deleteNews(id) {
-      try {
-        await axios.delete(`${MEDIA_API_URL}/admin-panel/news/${id}/`);
-        this.fetchNews();
-      } catch (error) {
-        console.error('Ошибка при удалении новости:', error);
+      if (confirm('Вы уверены, что хотите удалить эту новость?')) {
+        try {
+          await axios.delete(`${MEDIA_API_URL}/admin-panel/news/${id}/`);
+          this.fetchNews();
+        } catch (error) {
+          console.error('Ошибка при удалении новости:', error);
+        }
       }
+    },
+
+    getImageUrl(imagePath) {
+      if (imagePath.startsWith('http')) {
+        return imagePath;
+      }
+      return `${MEDIA_API_URL}${imagePath.startsWith('/') ? '' : '/'}${imagePath}`;
     },
 
     formatDate(dateString) {
       const options = { year: 'numeric', month: 'long', day: 'numeric' };
       return new Date(dateString).toLocaleDateString('ru-RU', options);
+    },
+
+    editNews(news) {
+      this.isModalOpen = true;
+      this.isEditMode = true;
+      
+      this.newsForm = {
+        id: news.id,
+        title: news.title,
+        description: news.description,
+        url: news.url || '',
+        image: news.image
+      };
+      
+      this.selectedImageFile = null;
+      
+      if (this.$refs.imageInput) {
+        this.$refs.imageInput.value = '';
+      }
     },
   },
   created() {
@@ -205,7 +262,92 @@ export default {
 </script>
 
 <style scoped>
+.url-link {
+  color: #007bff;
+  text-decoration: none;
+  font-size: 0.9em;
+}
 
+.url-link:hover {
+  text-decoration: underline;
+}
+
+.no-url {
+  color: #6c757d;
+  font-style: italic;
+}
+
+.form-group small {
+  color: #6c757d;
+  font-size: 0.8em;
+}
+.current-images-section {
+  margin-bottom: 20px;
+}
+
+.section-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.current-image-item {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+}
+
+.current-image {
+  max-width: 100%;
+  max-height: 200px; /* Ограничиваем высоту */
+  width: auto;
+  height: auto;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  object-fit: contain; /* Сохраняет пропорции */
+}
+
+/* Модальное окно */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  padding: 20px; /* Добавляем отступы по краям */
+  box-sizing: border-box;
+}
+
+.modal-content {
+  background-color: white;
+  padding: 30px;
+  border-radius: 8px;
+  width: 500px; /* Увеличиваем ширину */
+  max-width: 95vw; /* Ограничиваем максимальную ширину */
+  max-height: 90vh; /* Ограничиваем высоту */
+  overflow-y: auto; /* Добавляем прокрутку если контент не помещается */
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  box-sizing: border-box;
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+  .modal-content {
+    width: 95vw;
+    padding: 20px;
+    margin: 10px;
+  }
+  
+  .current-image {
+    max-height: 150px; /* Уменьшаем высоту на мобильных */
+  }
+}
 
 .edit-btn {
   background-color: #000F42; /* Темно-синий для редактирования */

@@ -80,7 +80,10 @@
 
     <!-- Модальное окно -->
     <div v-if="isModalOpen" class="minimal-modal-overlay" @click.self="closeModal">
-      <div class="minimal-modal-container">
+      <div class="minimal-modal-container"
+           @touchstart="handleTouchStart"
+           @touchmove="handleTouchMove"
+           @touchend="handleTouchEnd">
         <div class="minimal-modal-content">
           <div class="modal-header">
             <div class="case-counter">
@@ -89,7 +92,10 @@
             <button @click="closeModal" class="close-btn">×</button>
           </div>
 
-          <div class="modal-image-wrapper">
+          <div class="modal-image-wrapper"
+               @touchstart="handleImageTouchStart"
+               @touchmove="handleImageTouchMove"
+               @touchend="handleImageTouchEnd">
             <img 
               v-if="selectedCase && selectedCase.images && selectedCase.images[currentIndex]"
               :src="getModalImageUrl(selectedCase.images[currentIndex])" 
@@ -98,6 +104,13 @@
             >
             <div v-else class="image-placeholder">
               Изображение не доступно
+            </div>
+            
+            <!-- Свайп индикаторы -->
+            <div v-if="isMobile && selectedCase?.images?.length > 1" class="swipe-indicators">
+              <div class="swipe-hint" v-if="showSwipeHint">
+                ← Свайп для навигации →
+              </div>
             </div>
           </div>
 
@@ -194,6 +207,7 @@ img {
   width: 100%;
   max-height: 90vh;
   overflow: hidden;
+  touch-action: pan-y;
 }
 
 .minimal-modal-content {
@@ -238,12 +252,20 @@ img {
   align-items: center;
   min-height: 200px;
   max-height: 300px;
+  position: relative;
+  overflow: hidden;
+  touch-action: pan-y;
 }
 
 .modal-image {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
+  transition: transform 0.3s ease;
+}
+
+.modal-image.swiping {
+  transition: none;
 }
 
 .modal-info {
@@ -322,6 +344,52 @@ img {
   background: #999;
 }
 
+/* Свайп индикаторы */
+.swipe-indicators {
+  position: absolute;
+  bottom: 10px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.swipe-hint {
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 12px;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+/* Анимации для свайпа */
+.swipe-left {
+  animation: swipeLeft 0.3s ease;
+}
+
+.swipe-right {
+  animation: swipeRight 0.3s ease;
+}
+
+@keyframes swipeLeft {
+  0% { transform: translateX(0); }
+  50% { transform: translateX(-10px); }
+  100% { transform: translateX(0); }
+}
+
+@keyframes swipeRight {
+  0% { transform: translateX(0); }
+  50% { transform: translateX(10px); }
+  100% { transform: translateX(0); }
+}
+
 @media (max-width: 640px) {
   .minimal-modal-overlay {
     padding: 10px;
@@ -357,6 +425,11 @@ img {
   .nav-btn {
     padding: 6px;
   }
+  
+  .swipe-hint {
+    font-size: 11px;
+    padding: 6px 12px;
+  }
 }
 
 @media (max-width: 380px) {
@@ -390,7 +463,16 @@ export default {
       isModalOpen: false,
       isMobile: window.innerWidth < 768,
       loading: true,
-      error: null
+      error: null,
+      
+      // Свайп переменные
+      touchStartX: 0,
+      touchStartY: 0,
+      touchEndX: 0,
+      touchEndY: 0,
+      isSwiping: false,
+      swipeDistance: 0,
+      showSwipeHint: true
     };
   },
   computed: {
@@ -412,8 +494,8 @@ export default {
     async fetchCasesData() {
       try {
         this.loading = true;
-        const response = await axios.get(API_URL);
-        this.cases = response.data.cases || [];
+        const response = await axios.get(`${API_URL}/cases/`);
+        this.cases = response.data || [];
       } catch (error) {
         console.error('Error fetching cases data:', error);
         this.error = 'Не удалось загрузить данные кейсов';
@@ -424,17 +506,14 @@ export default {
     },
 
     getImageUrl(caseItem) {
-      const imagePath = caseItem.images && caseItem.images[0] 
-        ? caseItem.images[0].image 
-        : caseItem.image;
-      
-      if (!imagePath) return '/assets/img/placeholder.jpg';
-      
-      return `${MEDIA_API_URL}${imagePath}`;
+      if (caseItem.images && caseItem.images.length > 0) {
+        return `${MEDIA_API_URL}${caseItem.images[0].image}`;
+      }
+      return '/assets/img/placeholder.jpg';
     },
 
     getModalImageUrl(imageObj) {
-      if (!imageObj?.image) return '';
+      if (!imageObj?.image) return '/assets/img/placeholder.jpg';
       return `${MEDIA_API_URL}${imageObj.image}`;
     },
 
@@ -446,6 +525,12 @@ export default {
       this.currentIndex = 0;
       this.selectedCase = this.cases[index];
       this.isModalOpen = true;
+      this.showSwipeHint = true;
+      
+      // Скрываем подсказку через 3 секунды
+      setTimeout(() => {
+        this.showSwipeHint = false;
+      }, 3000);
       
       document.documentElement.style.overflow = 'hidden';
       document.body.style.overflow = 'hidden';
@@ -460,12 +545,14 @@ export default {
     nextCaseImage() {
       if (this.selectedCase?.images?.length > 0) {
         this.currentIndex = (this.currentIndex + 1) % this.selectedCase.images.length;
+        this.animateSwipe('left');
       }
     },
 
     prevCaseImage() {
       if (this.selectedCase?.images?.length > 0) {
         this.currentIndex = (this.currentIndex - 1 + this.selectedCase.images.length) % this.selectedCase.images.length;
+        this.animateSwipe('right');
       }
     },
 
@@ -475,8 +562,100 @@ export default {
       }
     },
 
+    animateSwipe(direction) {
+      const image = document.querySelector('.modal-image');
+      if (image) {
+        image.classList.add(direction === 'left' ? 'swipe-left' : 'swipe-right');
+        setTimeout(() => {
+          image.classList.remove('swipe-left', 'swipe-right');
+        }, 300);
+      }
+    },
+
     checkMobile() {
       this.isMobile = window.innerWidth < 768;
+    },
+
+    // Методы для свайпа
+    handleTouchStart(e) {
+      this.touchStartX = e.touches[0].clientX;
+      this.touchStartY = e.touches[0].clientY;
+      this.isSwiping = false;
+    },
+
+    handleTouchMove(e) {
+      if (!this.isModalOpen) return;
+      
+      this.touchEndX = e.touches[0].clientX;
+      this.touchEndY = e.touches[0].clientY;
+      
+      const diffX = this.touchStartX - this.touchEndX;
+      const diffY = this.touchStartY - this.touchEndY;
+      
+      // Проверяем, что это горизонтальный свайп (а не вертикальный скролл)
+      if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 10) {
+        this.isSwiping = true;
+        e.preventDefault();
+      }
+    },
+
+    handleTouchEnd() {
+      if (!this.isSwiping || !this.isModalOpen) return;
+      
+      const diffX = this.touchStartX - this.touchEndX;
+      const minSwipeDistance = 50; // Минимальное расстояние свайпа
+      
+      if (Math.abs(diffX) > minSwipeDistance) {
+        if (diffX > 0) {
+          // Свайп влево - следующее изображение
+          this.nextCaseImage();
+        } else {
+          // Свайп вправо - предыдущее изображение
+          this.prevCaseImage();
+        }
+      }
+      
+      this.isSwiping = false;
+    },
+
+    // Методы для свайпа по изображению
+    handleImageTouchStart(e) {
+      this.touchStartX = e.touches[0].clientX;
+      this.touchStartY = e.touches[0].clientY;
+      this.isSwiping = false;
+    },
+
+    handleImageTouchMove(e) {
+      if (!this.isModalOpen || this.selectedCase?.images?.length <= 1) return;
+      
+      this.touchEndX = e.touches[0].clientX;
+      this.touchEndY = e.touches[0].clientY;
+      
+      const diffX = this.touchStartX - this.touchEndX;
+      const diffY = this.touchStartY - this.touchEndY;
+      
+      if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 10) {
+        this.isSwiping = true;
+        e.preventDefault();
+      }
+    },
+
+    handleImageTouchEnd() {
+      if (!this.isSwiping || !this.isModalOpen || this.selectedCase?.images?.length <= 1) return;
+      
+      const diffX = this.touchStartX - this.touchEndX;
+      const minSwipeDistance = 30;
+      
+      if (Math.abs(diffX) > minSwipeDistance) {
+        if (diffX > 0) {
+          this.nextCaseImage();
+        } else {
+          this.prevCaseImage();
+        }
+      }
+      
+      this.isSwiping = false;
+      this.showSwipeHint = false; // Скрываем подсказку после первого свайпа
     }
   },
   mounted() {

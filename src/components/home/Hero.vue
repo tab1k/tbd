@@ -51,48 +51,58 @@
             class="slide"
             :class="{ active: currentSlide === index }"
           >
-            <img 
-              :src="slide.image" 
-              class="hero-photo" 
-              :alt="slide.title || 'news image'" 
-              @error="handleImageError"
-              loading="lazy"
-            />
+            <!-- Кликабельная обертка для всего слайда -->
+            <a 
+              v-if="slide.url && slide.url !== '#'" 
+              :href="slide.url" 
+              target="_blank" 
+              class="slide-link"
+              @click.stop
+            >
+              <img 
+                :src="slide.image" 
+                class="hero-photo" 
+                :alt="slide.title || 'news image'" 
+                @error="handleImageError"
+                loading="lazy"
+              />
 
-            <!-- Overlay с заголовком новости -->
-            <div v-if="slide.title" class="news-overlay">
-              <h3 class="news-title">{{ slide.title }}</h3>
-              <p v-if="slide.description" class="news-description">{{ slide.description }}</p>
-              <span v-if="slide.created_at" class="news-date">
-                {{ formatDate(slide.created_at) }}
-              </span>
-            </div>
-
-            <!-- Пузырёк-отзыв -->
-            <div class="testimonial">
-              <img :src="slide.testimonial.avatar" alt="avatar" class="t-avatar" />
-              <div class="t-text">
-                <span class="t-name">{{ slide.testimonial.name }}</span>
-                <p class="t-msg">{{ slide.testimonial.text }}</p>
+              <!-- Overlay с заголовком новости -->
+              <div class="news-overlay">
+                <h3 class="news-title">{{ slide.title }}</h3>
+                <span v-if="slide.created_at" class="news-date">
+                  {{ formatDate(slide.created_at) }}
+                </span>
               </div>
-            </div>
 
-            <!-- Карточка рейтинга -->
-            <div class="rating-card">
-              <ul class="avatar-stack">
-                <li v-for="(src, i) in avatars.slice(0, 4)" :key="i" class="stack-item">
-                  <img :src="src" alt="avatar" />
-                </li>
-                <li class="stack-item more">
-                  <div><span>500+</span></div>
-                </li>
-              </ul>
-              <p class="metric">{{ metricLabel }}</p>
-              <p class="score">
-                <i class="star">★</i>
-                <span class="value">{{ rating.toFixed(1) }}</span
-                ><span class="out-of">/{{ ratingOutOf }}</span>
-              </p>
+              <!-- Карточка рейтинга -->
+              <div class="rating-card">
+                <p v-if="slide.description">{{ slide.description }}</p>
+              </div>
+            </a>
+
+            <!-- Не кликабельная версия (если нет URL) -->
+            <div v-else>
+              <img 
+                :src="slide.image" 
+                class="hero-photo" 
+                :alt="slide.title || 'news image'" 
+                @error="handleImageError"
+                loading="lazy"
+              />
+
+              <!-- Overlay с заголовком новости -->
+              <div class="news-overlay">
+                <h3 class="news-title">{{ slide.title }}</h3>
+                <span v-if="slide.created_at" class="news-date">
+                  {{ formatDate(slide.created_at) }}
+                </span>
+              </div>
+
+              <!-- Карточка рейтинга -->
+              <div class="rating-card">
+                <p v-if="slide.description">{{ slide.description }}</p>
+              </div>
             </div>
           </div>
         </div>
@@ -175,6 +185,7 @@ export default {
         image: img01,
         title: "Создаём тренды",
         description: "Управляем смыслами",
+        url: "#",
         testimonial: {
           name: "Dennis Barrett",
           text: "🔥 Folio team nailed it!",
@@ -185,6 +196,7 @@ export default {
         image: img01,
         title: "Стратегические коммуникации", 
         description: "Эффективные решения",
+        url: "#",
         testimonial: {
           name: "John Doe",
           text: "Amazing work on the project!",
@@ -195,6 +207,7 @@ export default {
         image: img01,
         title: "Управление репутацией",
         description: "Профессиональный подход",
+        url: "#",
         testimonial: {
           name: "Jane Smith",
           text: "The best team ever!",
@@ -211,24 +224,26 @@ export default {
       try {
         isLoading.value = true;
         error.value = null;
-        
-        console.log('Загружаем данные из:', API_URL);
-        const response = await axios.get(API_URL);
+
+        console.log('Загружаем данные из:', `${API_URL}/news`);
+        const response = await axios.get(`${API_URL}/news`);
+
         console.log('Полученные данные:', response.data);
-        
-        if (response.data && response.data.news && response.data.news.length > 0) {
-          console.log('Найдено новостей:', response.data.news.length);
-          
+
+        if (response.data && response.data.results && response.data.results.length > 0) {
+          console.log('Найдено новостей:', response.data.results.length);
+
           // Преобразуем новости в формат слайдов
-          slides.value = response.data.news.map((newsItem, index) => {
+          slides.value = response.data.results.map((newsItem, index) => {
             const imageUrl = newsItem.image ? `${MEDIA_API_URL}${newsItem.image}` : img01;
-            console.log(`Новость ${index + 1}: ${newsItem.title}, изображение: ${imageUrl}`);
-            
+            console.log(`Новость ${index + 1}: ${newsItem.title}, URL: ${newsItem.url}`);
+
             return {
               id: newsItem.id,
               image: imageUrl,
               title: newsItem.title,
               description: newsItem.description,
+              url: newsItem.url,
               created_at: newsItem.created_at,
               testimonial: {
                 name: `Читатель ${index + 1}`,
@@ -251,7 +266,67 @@ export default {
       }
     };
 
-    // Touch/Swipe логика
+    // Обработка ошибок изображений
+    const handleImageError = (event) => {
+      console.error('Не удалось загрузить изображение:', event.target.src);
+      event.target.src = img01;
+    };
+
+    const formatDate = (dateString) => {
+      if (!dateString) return '';
+      try {
+        return new Date(dateString).toLocaleDateString('ru-RU');
+      } catch (e) {
+        return '';
+      }
+    };
+
+    const nextSlide = () => {
+      currentSlide.value = (currentSlide.value + 1) % slides.value.length;
+    };
+
+    const prevSlide = () => {
+      currentSlide.value = currentSlide.value === 0 
+        ? slides.value.length - 1 
+        : currentSlide.value - 1;
+    };
+
+    const goToSlide = (index) => {
+      currentSlide.value = index;
+      restartAutoSlide();
+    };
+
+    const startAutoSlide = () => {
+      if (slides.value.length > 1) {
+        autoSlideInterval = setInterval(() => {
+          nextSlide();
+        }, 4000);
+      }
+    };
+
+    const stopAutoSlide = () => {
+      if (autoSlideInterval) {
+        clearInterval(autoSlideInterval);
+        autoSlideInterval = null;
+      }
+    };
+
+    const restartAutoSlide = () => {
+      stopAutoSlide();
+      startAutoSlide();
+    };
+
+    const handleKeydown = (e) => {
+      if (e.key === 'ArrowLeft') {
+        prevSlide();
+        restartAutoSlide();
+      } else if (e.key === 'ArrowRight') {
+        nextSlide();
+        restartAutoSlide();
+      }
+    };
+
+    // Touch events для свайпа
     const touchStart = ref({ x: 0, y: 0 });
     const touchEnd = ref({ x: 0, y: 0 });
     const minSwipeDistance = 50;
@@ -275,114 +350,24 @@ export default {
       const distanceX = touchStart.value.x - touchEnd.value.x;
       const distanceY = touchStart.value.y - touchEnd.value.y;
       
-      // Проверяем, что горизонтальный свайп больше вертикального
       if (Math.abs(distanceX) > Math.abs(distanceY) && Math.abs(distanceX) > minSwipeDistance) {
         if (distanceX > 0) {
-          // Свайп влево - следующий слайд
           nextSlide();
         } else {
-          // Свайп вправо - предыдущий слайд
           prevSlide();
         }
-        // Перезапускаем автопрокрутку после взаимодействия
-        restartAutoSlide();
-      }
-    };
-
-    // Обработка ошибки загрузки изображения
-    const handleImageError = (event) => {
-      console.error('Не удалось загрузить изображение:', event.target.src);
-      console.log('Полный URL изображения:', event.target.src);
-      console.log('MEDIA_API_URL:', MEDIA_API_URL);
-      
-      // Устанавливаем fallback изображение
-      event.target.src = img01;
-    };
-
-    // Форматирование даты
-    const formatDate = (dateString) => {
-      if (!dateString) return '';
-      try {
-        return new Date(dateString).toLocaleDateString('ru-RU');
-      } catch (e) {
-        return '';
-      }
-    };
-
-    // Навигация слайдов
-    const nextSlide = () => {
-      currentSlide.value = (currentSlide.value + 1) % slides.value.length;
-    };
-
-    const prevSlide = () => {
-      currentSlide.value = currentSlide.value === 0 
-        ? slides.value.length - 1 
-        : currentSlide.value - 1;
-    };
-
-    const goToSlide = (index) => {
-      currentSlide.value = index;
-      restartAutoSlide();
-    };
-
-    // Автоматическая прокрутка слайдов
-    const startAutoSlide = () => {
-      if (slides.value.length > 1) {
-        autoSlideInterval = setInterval(() => {
-          nextSlide();
-        }, 4000);
-      }
-    };
-
-    const stopAutoSlide = () => {
-      if (autoSlideInterval) {
-        clearInterval(autoSlideInterval);
-        autoSlideInterval = null;
-      }
-    };
-
-    const restartAutoSlide = () => {
-      stopAutoSlide();
-      startAutoSlide();
-    };
-
-    // Управление клавиатурой
-    const handleKeydown = (e) => {
-      if (e.key === 'ArrowLeft') {
-        prevSlide();
-        restartAutoSlide();
-      } else if (e.key === 'ArrowRight') {
-        nextSlide();
         restartAutoSlide();
       }
     };
 
     onMounted(() => {
-      loadNewsData(); // Загружаем данные при монтировании
-      // Добавляем обработчик клавиатуры
+      loadNewsData();
       document.addEventListener('keydown', handleKeydown);
     });
 
     onUnmounted(() => {
       stopAutoSlide();
       document.removeEventListener('keydown', handleKeydown);
-    });
-
-    // Следим за изменением slides и запускаем автопрокрутку
-    const startAutoSlideWhenReady = () => {
-      if (!isLoading.value && slides.value.length > 0) {
-        startAutoSlide();
-      }
-    };
-
-    // Запускаем автопрокрутку после загрузки данных
-    const unwatchLoading = ref(null);
-    onMounted(() => {
-      unwatchLoading.value = () => {
-        if (!isLoading.value && slides.value.length > 0) {
-          setTimeout(startAutoSlide, 100);
-        }
-      };
     });
 
     return { 
@@ -404,8 +389,7 @@ export default {
       isLoading,
       error,
       loadNewsData,
-      formatDate,
-      MEDIA_API_URL
+      formatDate
     };
   },
 };
@@ -607,11 +591,11 @@ export default {
 }
 
 .hero-text { max-width: 800px; }
-.hero-text p { max-width: 740px; }
+
 .container-mode { width: 100%; padding-left: 80px; padding-right: 80px; display: flex; align-items: flex-start; gap: 40px; }
 
 .hero-text h1 {
-  font-size: clamp(28px, 5vw, 72px);
+  font-size: clamp(28px, 5vw, 52px);
   font-weight: 700;
   line-height: 1.2;
   color: #000f42;
@@ -619,7 +603,7 @@ export default {
 }
 
 .hero-text p {
-  font-size: clamp(14px, 2vw, 18px);
+  font-size: clamp(14px, 2vw, 16px);
   color: #576182;
   line-height: 1.6;
   margin-bottom: 16px;

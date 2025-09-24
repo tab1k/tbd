@@ -1,7 +1,14 @@
 <template>
-  <section id="about" class="about-section py-5">
+  <section id="about" class="about-section">
+
+    <div class="marquee d-md-none">
+      <span>📞 Свяжитесь с нами прямо сейчас — мы вам поможем!</span>
+    </div>
+
     <div class="container-mode">
       <div class="row align-items-center">
+
+        
 
         <!-- Видео -->
         <div class="col-md-6 order-1 order-md-2">
@@ -85,7 +92,7 @@
 <script>
 import axios from 'axios';
 import { API_URL, MEDIA_API_URL } from '@/config';
-import defaultPoster from '@/assets/img/asia.jpg'; // Правильный импорт изображения
+import defaultPoster from '@/assets/img/asia.jpg';
 
 export default {
   name: 'AboutSection',
@@ -100,36 +107,38 @@ export default {
   },
   computed: {
     posterImage() {
-      // Если есть постер из API - используем его, иначе дефолтный
       return this.posterUrl ? MEDIA_API_URL + this.posterUrl : defaultPoster;
     }
   },
   async created() {
-    try {
-      const response = await axios.get(API_URL);
-      console.log('Response Data:', response.data);
-      
-      if (response.data.videos && response.data.videos.length > 0) {
-        const videoData = response.data.videos[0];
-        this.videoUrl = MEDIA_API_URL + videoData.video;
-        
-        // Если есть постер в ответе API
-        if (videoData.poster) {
-          this.posterUrl = videoData.poster;
-        }
-        
-        console.log('Video URL:', this.videoUrl);
-        console.log('Poster URL:', this.posterUrl);
-      }
-    } catch (error) {
-      console.error('Error fetching video:', error);
-    }
+    await this.fetchVideoData();
   },
-  mounted() {
-    this.setupLazyLoading();
-  },
-  
   methods: {
+    async fetchVideoData() {
+      try {
+        console.log('Загружаем видео из:', `${API_URL}/videos/`);
+        const response = await axios.get(`${API_URL}/videos/`);
+        console.log('Полученные данные видео:', response.data);
+        
+        if (response.data.results && response.data.results.length > 0) {
+          const videoData = response.data.results[0];
+          this.videoUrl = MEDIA_API_URL + videoData.video;
+          
+          // Если есть постер в ответе API
+          if (videoData.poster) {
+            this.posterUrl = videoData.poster;
+          }
+          
+          console.log('Video URL:', this.videoUrl);
+          console.log('Poster URL:', this.posterUrl);
+        } else {
+          console.log('Видео не найдены в ответе API');
+        }
+      } catch (error) {
+        console.error('Error fetching video:', error);
+      }
+    },
+    
     setupLazyLoading() {
       const videoElement = this.$refs.videoPlayer;
       
@@ -189,6 +198,10 @@ export default {
     }
   },
   
+  mounted() {
+    this.setupLazyLoading();
+  },
+  
   beforeUnmount() {
     if (this.$refs.videoPlayer) {
       this.$refs.videoPlayer.pause();
@@ -198,6 +211,38 @@ export default {
 </script>
 
 <style scoped>
+
+section#about {
+    padding-top: 10px;
+}
+
+/* Бегущая строка */
+.marquee {
+  width: 100%;
+  overflow: hidden;
+  background: #001246;
+  color: #fff;
+  white-space: nowrap;
+  padding: 10px 0;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.marquee span {
+  display: inline-block;
+  padding-left: 100%;
+  animation: marquee 12s linear infinite;
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
 .about-section p {
   margin-bottom: 20px;
   color: #666F8E;
@@ -225,7 +270,6 @@ export default {
 
 .position-absolute.top-50.start-50.translate-middle {
     text-align: center;
-
 }
 
 .translate-middle {

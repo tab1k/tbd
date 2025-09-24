@@ -24,6 +24,11 @@
       </button>
     </div>
 
+    <!-- Сообщение об ошибке -->
+    <div v-if="error" class="error-message">
+      {{ error }}
+    </div>
+
     <!-- Таблица с кейсами -->
     <div class="table-responsive">
       <table class="case-table">
@@ -36,14 +41,14 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="caseItem in filteredCases" :key="caseItem.id">
-            <td>{{ caseItem.title }}</td>
-            <td>{{ caseItem.description }}</td>
+          <tr v-for="caseItem in filteredCases" :key="caseItem?.id || caseItem?.title">
+            <td>{{ caseItem?.title || 'Без названия' }}</td>
+            <td>{{ caseItem?.description || 'Без описания' }}</td>
             <td>
-              <div v-if="caseItem.images && caseItem.images.length > 0" class="images-preview">
+              <div v-if="caseItem?.images && caseItem.images.length > 0" class="images-preview">
                 <img v-for="(img, index) in caseItem.images.slice(0, 3)" 
                      :key="index"
-                     :src="getImageUrl(img.image)" 
+                     :src="getImageUrl(img?.image)" 
                      alt="Изображение кейса" 
                      class="table-image"
                      @error="handleImageError" />
@@ -55,7 +60,7 @@
             </td>
             <td>
               <button @click="editCase(caseItem)" class="action-btn edit-btn">Редактировать</button>
-              <button @click="deleteCase(caseItem.id)" class="action-btn delete-btn">Удалить</button>
+              <button @click="deleteCase(caseItem?.id)" class="action-btn delete-btn">Удалить</button>
             </td>
           </tr>
         </tbody>
@@ -74,7 +79,7 @@
           <p class="section-title">Текущие изображения:</p>
           <div class="current-images-grid">
             <div v-for="(img, index) in caseForm.images" :key="index" class="current-image-item">
-              <img :src="getImageUrl(img.image)" alt="Текущее изображение" class="current-image" />
+              <img :src="getImageUrl(img?.image)" alt="Текущее изображение" class="current-image" />
               <button type="button" @click="removeCurrentImage(index)" class="remove-image-btn">×</button>
             </div>
           </div>
@@ -141,6 +146,7 @@ export default {
       },
       selectedImageFiles: [],
       imagesToDelete: [],
+      error: null,
     };
   },
   methods: {
@@ -151,16 +157,29 @@ export default {
       return `${MEDIA_API_URL}${imagePath}`;
     },
 
-    // Загрузка кейсов
+    // Загрузка кейсов - ИСПРАВЛЕННЫЙ ENDPOINT ДЛЯ АДМИНКИ
     async fetchCases() {
       try {
-        console.log('Запрашиваем кейсы...');
+        console.log('Запрашиваем кейсы из админки...');
+        // Используем endpoint админки
         const response = await axios.get(`${MEDIA_API_URL}/admin-panel/cases/`);
-        this.cases = response.data;
+        
+        // Фильтруем null значения и добавляем проверки
+        this.cases = (response.data || []).map(caseItem => ({
+          id: caseItem?.id || null,
+          title: caseItem?.title || 'Без названия',
+          description: caseItem?.description || 'Без описания',
+          images: Array.isArray(caseItem?.images) ? caseItem.images : []
+        }));
+        
         this.filteredCases = this.cases;
         console.log('Кейсы загружены:', this.cases);
+        this.error = null;
       } catch (error) {
         console.error('Ошибка при загрузке кейсов:', error);
+        this.error = 'Ошибка при загрузке кейсов. Проверьте подключение к серверу.';
+        this.cases = [];
+        this.filteredCases = [];
       }
     },
 
@@ -209,14 +228,12 @@ export default {
       const image = this.caseForm.images[index];
       if (image && image.id) {
         try {
-          // Отправка запроса на сервер для удаления изображения
           await axios.delete(`${MEDIA_API_URL}/admin-panel/case-images/${image.id}/`);
           console.log('Изображение удалено:', image.id);
-
-          // Удаляем изображение из списка в интерфейсе
           this.caseForm.images.splice(index, 1);
         } catch (error) {
           console.error('Ошибка при удалении изображения:', error);
+          alert('Ошибка при удалении изображения');
         }
       }
     },
@@ -233,18 +250,8 @@ export default {
           formData.append('images', file);
         });
 
-        if (this.isEditMode) {
-          // Удаляем изображения, помеченные к удалению
-          for (const imageId of this.imagesToDelete) {
-            try {
-              await axios.delete(`${MEDIA_API_URL}/admin-panel/case-images/${imageId}/`);
-              console.log('Изображение удалено:', imageId);
-            } catch (error) {
-              console.error('Ошибка при удалении изображения:', error);
-            }
-          }
-
-          // Обновляем кейс
+        if (this.isEditMode && this.caseForm.id) {
+          // Обновляем кейс через админку
           const response = await axios.put(
             `${MEDIA_API_URL}/admin-panel/cases/${this.caseForm.id}/`,
             formData,
@@ -261,7 +268,7 @@ export default {
             this.cases[index] = response.data;
           }
         } else {
-          // Создаем новый кейс
+          // Создаем новый кейс через админку
           const response = await axios.post(
             `${MEDIA_API_URL}/admin-panel/cases/`,
             formData,
@@ -276,31 +283,42 @@ export default {
 
         this.closeModal();
         this.filterCases();
+        
       } catch (error) {
         console.error('Ошибка при отправке данных:', error);
         if (error.response) {
           console.error('Ответ сервера:', error.response.data);
+          alert('Ошибка сервера: ' + JSON.stringify(error.response.data));
+        } else {
+          alert('Ошибка сети. Проверьте подключение к серверу.');
         }
       }
     },
 
     // Фильтрация кейсов
     filterCases() {
+      if (!this.cases.length) return;
+      
       this.filteredCases = this.cases.filter(caseItem =>
-        caseItem.title?.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-        caseItem.description?.toLowerCase().includes(this.searchQuery.toLowerCase())
+        (caseItem?.title || '').toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+        (caseItem?.description || '').toLowerCase().includes(this.searchQuery.toLowerCase())
       );
     },
 
     // Редактирование кейса
     editCase(caseItem) {
+      if (!caseItem?.id) {
+        console.error('Нельзя редактировать кейс без ID');
+        return;
+      }
+      
       this.isModalOpen = true;
       this.isEditMode = true;
       this.caseForm = {
         id: caseItem.id,
-        title: caseItem.title,
-        description: caseItem.description,
-        images: [...(caseItem.images || [])]
+        title: caseItem.title || '',
+        description: caseItem.description || '',
+        images: Array.isArray(caseItem.images) ? [...caseItem.images] : []
       };
       this.selectedImageFiles = [];
       this.imagesToDelete = [];
@@ -315,6 +333,11 @@ export default {
 
     // Удаление кейса
     async deleteCase(id) {
+      if (!id) {
+        console.error('Нельзя удалить кейс без ID');
+        return;
+      }
+      
       if (!confirm('Вы уверены, что хотите удалить этот кейс?')) {
         return;
       }
@@ -323,6 +346,8 @@ export default {
         await axios.delete(`${MEDIA_API_URL}/admin-panel/cases/${id}/`);
         this.cases = this.cases.filter(caseItem => caseItem.id !== id);
         this.filterCases();
+        alert('Кейс успешно удален');
+        
       } catch (error) {
         console.error('Ошибка при удалении кейса:', error);
         alert('Ошибка при удалении кейса');
@@ -339,6 +364,8 @@ export default {
 .admin-cases {
   padding: 30px;
   font-family: 'Montserrat', sans-serif;
+  position: relative;
+  z-index: 1;
 }
 
 .page-header {
@@ -399,6 +426,15 @@ export default {
   font-weight: bold;
 }
 
+.error-message {
+  background-color: #f8d7da;
+  color: #721c24;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  border: 1px solid #f5c6cb;
+}
+
 .table-responsive {
   overflow-x: auto;
 }
@@ -451,18 +487,19 @@ export default {
   border-radius: 10px;
 }
 
-/* Модальное окно */
+/* Модальное окно - ИСПРАВЛЕННЫЕ СТИЛИ */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 999999;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 10000;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 20px;
 }
 
 .modal-content {
@@ -474,6 +511,8 @@ export default {
   width: 600px;
   max-height: 90vh;
   overflow-y: auto;
+  position: relative;
+  z-index: 10001;
 }
 
 .modal-content h2 {
@@ -482,7 +521,7 @@ export default {
   color: #000F42;
 }
 
-/* Форма */
+/* Остальные стили остаются без изменений */
 .form-group {
   margin-bottom: 20px;
 }
@@ -524,7 +563,6 @@ export default {
   font-weight: 500;
 }
 
-/* Сетки изображений */
 .current-images-grid,
 .selected-images-grid {
   display: grid;
@@ -584,7 +622,6 @@ export default {
   background: rgba(220, 53, 69, 1);
 }
 
-/* Кнопки */
 .modal-actions {
   display: flex;
   flex-direction: column;
@@ -621,7 +658,6 @@ export default {
   background: #5a6268;
 }
 
-/* Кнопки действий */
 .action-btn {
   padding: 8px 16px;
   font-size: 14px;
@@ -676,11 +712,10 @@ export default {
   transform: translateY(-50%);
   width: 16px;
   height: 16px;
-  background: url(assets/svg/arrow-left.svg) no-repeat center center;
-  background-size: contain;
+  background: #262a31;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z'/%3E%3C/svg%3E") no-repeat center;
 }
 
-/* Адаптивность */
 @media (max-width: 768px) {
   .admin-cases {
     padding: 20px;

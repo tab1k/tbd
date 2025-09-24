@@ -1,5 +1,5 @@
 <template>
-  <section id="team" class="py-5">
+  <section id="team">
     <div class="container-mode">
       <h2 class="mb-3">Команда</h2>
       <div class="row text-center g-2">
@@ -20,7 +20,7 @@
                 :src="getMemberPhotoUrl(member.photo)" 
                 :alt="member.name"
                 loading="lazy"
-                @load="imageLoaded"
+                @error="handleImageError"
               >
             </div>
             <h5 class="mt-3">{{ member.name }}</h5>
@@ -50,59 +50,38 @@ export default {
   },
   methods: {
     async fetchTeamData() {
-      try {
-        // Используем Promise.all для параллельной загрузки
-        const [teamResponse] = await Promise.all([
-          axios.get(API_URL),
-          // Предзагрузка критических ресурсов, если нужно
-          this.preloadCriticalResources()
-        ]);
+      try {        
+        const response = await axios.get(`${API_URL}/team/`);
         
-        this.team = teamResponse.data.team;
-        
-        // Предзагрузка изображений
-        this.preloadImages();
+        this.team = response.data;
         
       } catch (error) {
         console.error('Error fetching team data:', error);
-        this.error = 'Не удалось загрузить данные команды';
+        this.error = error.message;
       } finally {
         this.loading = false;
       }
     },
     
     getMemberPhotoUrl(photo) {
-      return photo ? `${MEDIA_API_URL}${photo}` : 'assets/img/default-avatar.png';
-    },
-    
-    preloadCriticalResources() {
-      // Предзагрузка дефолтного аватара
-      return new Promise((resolve) => {
-        if (typeof window !== 'undefined') {
-          const img = new Image();
-          img.src = 'assets/img/default-avatar.png';
-          img.onload = resolve;
-          img.onerror = resolve;
-        } else {
-          resolve();
-        }
-      });
-    },
-    
-    preloadImages() {
-      if (typeof window === 'undefined') return;
+      if (!photo) {
+        console.log('No photo provided, using default');
+        return 'assets/img/default-avatar.png';
+      }
       
-      this.team.forEach(member => {
-        if (member.photo) {
-          const img = new Image();
-          img.src = this.getMemberPhotoUrl(member.photo);
-        }
-      });
+      const fullUrl = `${MEDIA_API_URL}${photo}`;
+      console.log('Building photo URL:', { photo, MEDIA_API_URL, fullUrl });
+      return fullUrl;
     },
     
-    imageLoaded(event) {
-      // Можно добавить анимацию появления
-      event.target.classList.add('loaded');
+    handleImageError(event) {
+      console.error('Image load error:', {
+        src: event.target.src,
+        alt: event.target.alt
+      });
+      
+      // Fallback image
+      event.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YzZjNmMyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjQiIGZpbGw9IiM5OTk5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj7QotC10YHRgtC+0LLRi9C5PC90ZXh0Pjwvc3ZnPg==';
     }
   }
 }
@@ -131,7 +110,7 @@ export default {
   height: 100%;
   object-fit: cover;
   display: block;
-  opacity: 0;
+
   transition: opacity 0.3s ease;
 }
 
@@ -196,7 +175,7 @@ export default {
 /* Оптимизация для мобильных устройств */
 @media (max-width: 480px) {
   .photo {
-    aspect-ratio: 3/4; /* Более подходящее соотношение для мобильных */
+    aspect-ratio: 1; /* Более подходящее соотношение для мобильных */
   }
 }
 </style>
