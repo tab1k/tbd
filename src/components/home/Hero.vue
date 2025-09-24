@@ -70,14 +70,10 @@
               <!-- Overlay с заголовком новости -->
               <div class="news-overlay">
                 <h3 class="news-title">{{ slide.title }}</h3>
+                <p v-if="slide.description" class="news-description">{{ slide.description }}</p>
                 <span v-if="slide.created_at" class="news-date">
                   {{ formatDate(slide.created_at) }}
                 </span>
-              </div>
-
-              <!-- Карточка рейтинга -->
-              <div class="rating-card">
-                <p v-if="slide.description">{{ slide.description }}</p>
               </div>
             </a>
 
@@ -94,14 +90,10 @@
               <!-- Overlay с заголовком новости -->
               <div class="news-overlay">
                 <h3 class="news-title">{{ slide.title }}</h3>
+                <p v-if="slide.description" class="news-description">{{ slide.description }}</p>
                 <span v-if="slide.created_at" class="news-date">
                   {{ formatDate(slide.created_at) }}
                 </span>
-              </div>
-
-              <!-- Карточка рейтинга -->
-              <div class="rating-card">
-                <p v-if="slide.description">{{ slide.description }}</p>
               </div>
             </div>
           </div>
@@ -475,9 +467,17 @@ export default {
   margin: 0 0 8px 0;
   opacity: 0.9;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 4; /* Ограничение до 4 строк */
   -webkit-box-orient: vertical;
   overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+  max-height: calc(1.4em * 4); /* line-height * количество строк */
+  
+  /* Для современных браузеров */
+  display: -moz-box;
+  -moz-box-orient: vertical;
+  -moz-line-clamp: 4;
 }
 
 .news-date {
@@ -592,7 +592,14 @@ export default {
 
 .hero-text { max-width: 800px; }
 
-.container-mode { width: 100%; padding-left: 80px; padding-right: 80px; display: flex; align-items: flex-start; gap: 40px; }
+.container-mode { 
+  width: 100%; 
+  padding-left: 80px; 
+  padding-right: 80px; 
+  display: flex; 
+  align-items: flex-start; 
+  gap: 40px; 
+}
 
 .hero-text h1 {
   font-size: clamp(28px, 5vw, 52px);
@@ -724,21 +731,6 @@ export default {
   color: #4a5272; 
 }
 
-/* карточка рейтинга */
-.rating-card {
-  position: absolute;
-  right: -30px;       
-  bottom: -30px;
-  background: #fff;
-  color: #1f2348;
-  border-radius: 24px;
-  padding: 15px;
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.12);
-  width: 240px;
-  height: 190px;
-  z-index: 2;
-}
-
 .avatar-stack { 
   list-style: none; 
   padding: 0; 
@@ -824,6 +816,7 @@ export default {
   }
 }
 
+/* Для мобильных устройств - адаптация текста */
 @media (max-width: 768px) {
   .nav-arrows {
     padding: 0 -15px;
@@ -842,12 +835,16 @@ export default {
   .nav-next {
     margin-right: -15px;
   }
+  
+  .news-description {
+    -webkit-line-clamp: 3;
+    -moz-line-clamp: 3;
+    max-height: calc(1.4em * 3);
+    font-size: 13px;
+  }
 }
 
 @media (max-width: 576px) {
-  .rating-card { 
-    display: none; 
-  }
   .testimonial { 
     left: 8px; 
     top: 8px; 
@@ -871,7 +868,19 @@ export default {
   }
   
   .news-description {
-    font-size: 13px;
+    -webkit-line-clamp: 2;
+    -moz-line-clamp: 2;
+    max-height: calc(1.4em * 2);
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .news-description {
+    -webkit-line-clamp: 2;
+    -moz-line-clamp: 2;
+    max-height: calc(1.4em * 2);
+    font-size: 11px;
   }
 }
 </style>
