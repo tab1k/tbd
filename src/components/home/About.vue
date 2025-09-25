@@ -347,6 +347,10 @@ section#about {
     margin-top: 20px;
   }
 
+  .btn-primary, .btn-secondary {
+    width: 15%;
+  }
+
   .container-mode {
     padding-left: 16px;
     padding-right: 16px;

@@ -134,10 +134,35 @@
         </div>
       </div>
     </div>
+
+    <div class="mt-5">
+    <div class="row">
+      <!-- Левая часть (30%) -->
+      <div class="col-lg-3 col-md-4 mb-4">
+        <p style="color: #666F8E;">Наши проекты включают:</p>
+      </div>
+
+      <!-- Правая часть (70%) -->
+      <div class="col-lg-9 col-md-8">
+        <ul class="list-unstyled project-list">
+          <li class="mb-2">— PR-сопровождение национальных и международных проектов</li>
+          <li class="mb-2">— Коммуникационные стратегии для IT, энергетики, здравоохранения, финансов</li>
+          <li class="mb-2">— Региональные GR-проекты в Центральной Азии и на Ближнем Востоке</li>
+          <li class="mb-2">— Организация отраслевых форумов, выставок, B2B, B2G диалогов</li>
+          <li class="mb-2">— Внутренние коммуникации и запуск трансформационных инициатив</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
   </div>
 </template>
 
 <style scoped>
+
+li.mb-2 {
+  color: #666F8E;
+}
 .skeleton-image {
   background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
   background-size: 200% 100%;

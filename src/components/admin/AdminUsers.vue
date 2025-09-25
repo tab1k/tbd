@@ -1,5 +1,5 @@
 <template>
-  <div class="admin-users">
+  <div class="admin-page"> <!-- Изменил класс -->
     <div class="mb-3">
       <a class="link-back" href="/admin">Назад</a>
     </div>
@@ -19,14 +19,14 @@
         class="search-input"
       />
       <!-- Плюсик для добавления пользователя -->
-      <button class="add-user-btn" @click="openAddUserModal">
+      <button class="add-btn" @click="openAddUserModal"> <!-- Изменил класс -->
         <span class="plus-icon">+</span>
       </button>
     </div>
 
     <!-- Таблица с пользователями -->
     <div class="table-responsive">
-      <table class="user-table">
+      <table class="data-table"> <!-- Изменил класс -->
         <thead>
           <tr>
             <th id="first">Логин</th>
@@ -47,41 +47,11 @@
       </table>
     </div>
 
-  
-
-    <!-- ТЕСТОВАЯ МОДАЛКА (для проверки) -->
-    <div v-if="isModalOpen" 
-         style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.5) !important; z-index: 999999; display: flex; align-items: center; justify-content: center;">
-      <div style="background: white; padding: 30px; margin: 0 10px 0 10px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-        <h2>{{ isEditMode ? 'Редактировать пользователя' : 'Добавить пользователя' }}</h2>
-        <form @submit.prevent="submitForm">
-          <div class="form-group">
-            <label for="username">Логин:</label>
-            <input type="text" v-model="userForm.username" id="username" required style="width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px;" />
-          </div>
-          <div class="form-group">
-            <label for="email">Email:</label>
-            <input type="email" v-model="userForm.email" id="email" required style="width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px;" />
-          </div>
-          <div class="form-group">
-            <label for="role">Роль:</label>
-            <select v-model="userForm.role" id="role" required style="width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px;">
-              <option value="admin">Администратор</option>
-              <option value="user">Пользователь</option>
-            </select>
-          </div>
-          <div style="margin-top: 20px;" class="d-flex">
-            <button type="submit" style="background: #000F42; color: white; padding: 10px 10px; border: none; border-radius: 10px; margin-right: 10px; cursor: pointer;">{{ isEditMode ? 'Сохранить изменения' : 'Добавить' }}</button>
-            <button type="button" @click="closeModal" style="background: #6c757d; color: white; padding: 10px 10px; border: none; border-radius: 10px; cursor: pointer;">Закрыть</button>
-          </div>
-        </form>
-      </div>
-    </div>
-
     <!-- Модальное окно для добавления/редактирования пользователя -->
-    <div v-if="false" class="modal-overlay" @click.self="closeModal">
-      <div class="modal">
+    <div v-if="isModalOpen" class="modal-overlay" @click.self="closeModal">
+      <div class="modal-content">
         <h2>{{ isEditMode ? 'Редактировать пользователя' : 'Добавить пользователя' }}</h2>
+        
         <form @submit.prevent="submitForm">
           <div class="form-group">
             <label for="username">Логин:</label>
@@ -91,16 +61,14 @@
             <label for="email">Email:</label>
             <input type="email" v-model="userForm.email" id="email" required />
           </div>
-          <div class="form-group">
-            <label for="role">Роль:</label>
-            <select v-model="userForm.role" id="role" required>
-              <option value="admin">Администратор</option>
-              <option value="user">Пользователь</option>
-            </select>
-          </div>
-          <div class="form-actions">
-            <button type="submit">{{ isEditMode ? 'Сохранить изменения' : 'Добавить' }}</button>
-            <button type="button" @click="closeModal">Закрыть</button>
+          
+          <div class="modal-actions">
+            <button type="submit" class="btn-primary">
+              {{ isEditMode ? 'Сохранить изменения' : 'Добавить' }}
+            </button>
+            <button type="button" @click="closeModal" class="btn-secondary">
+              Закрыть
+            </button>
           </div>
         </form>
       </div>
@@ -109,8 +77,9 @@
 </template>
 
 <script>
+import '@/assets/css/common-admin.css';
 import axios from 'axios';
-import { API_URL, MEDIA_API_URL } from '@/config';
+import { MEDIA_API_URL } from '@/config';
 
 export default {
   data() {
@@ -236,294 +205,5 @@ export default {
 </script>
 
 <style scoped>
-/* Кнопка редактирования */
-.edit-btn {
-  background-color: #000F42; /* Темно-синий для редактирования */
-  color: white;
-  border: none;
-}
 
-.edit-btn:hover {
-  background-color: #003366; /* Более темный синий при наведении */
-}
-
-/* Кнопка удаления */
-.delete-btn {
-  background-color: #dc3545; /* Красный для удаления */
-  color: white;
-  border: none;
-}
-
-.delete-btn:hover {
-  background-color: #c82333; /* Более темный красный при наведении */
-}
-
-/* Стандартные стили для кнопок */
-.action-btn {
-  padding: 8px 16px;
-  font-size: 14px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-  border: none;
-}
-
-.link-back {
-  display: inline-flex;
-  align-items: center;
-  padding: 8px 8px 6px;
-  padding-left: 28px;
-  color: #262a31;
-  font-weight: 700;
-  font-size: 12px;
-  letter-spacing: .01em;
-  text-transform: uppercase;
-  background-color: #f5f7f8;
-  border-radius: 8px;
-  position: relative;
-  line-height: 13px;
-  text-decoration: none;
-}
-
-.link-back:before {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 8px;
-  transform: translateY(-50%);
-  width: 16px;
-  height: 16px;
-  background: url(assets/svg/arrow-left.svg) no-repeat center center;
-  background-size: contain;
-}
-
-/* На десктопах кнопки рядом */
-@media (min-width: 768px) {
-  .action-btn {
-    margin-right: 10px; /* Отступ справа для кнопок */
-  }
-
-  /* Для последней кнопки в ряду не добавляем отступ */
-  .action-btn:last-child {
-    margin-right: 0;
-  }
-}
-
-/* На мобильных устройствах кнопки друг под другом */
-@media (max-width: 767px) {
-  .action-btn {
-    margin-bottom: 10px; /* Отступ снизу для кнопок */
-    width: 100%; /* Ширина кнопок на мобильных устройствах */
-  }
-
-  /* Убираем отступ снизу для последней кнопки */
-  .action-btn:last-child {
-    margin-bottom: 0;
-  }
-}
-
-.admin-users {
-  padding: 30px;
-  font-family: 'Montserrat', sans-serif;
-}
-
-.page-header {
-  text-align: left;
-  margin-bottom: 1rem;
-}
-
-.page-header h1 {
-  font-size: 30px;
-  margin: 0;
-  color: #000F42;
-}
-
-.page-header p {
-  font-size: 15px;
-  color: #555;
-}
-
-.filters {
-  display: flex;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.search-input {
-  height: 40px;
-  padding: 0 10px;
-  font-size: 14px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  flex: 1;
-  max-width: 400px;
-  box-sizing: border-box;
-}
-
-.add-user-btn {
-  margin-left: 10px;
-  background-color: #000F42;
-  color: #fff;
-  border: none;
-  font-size: 24px;
-  width: 45px;
-  height: 40px;
-  border-radius: 8px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.add-user-btn:hover {
-  background-color: #003366;
-}
-
-.plus-icon {
-  font-size: 24px;
-  font-weight: bold;
-}
-
-.table-responsive {
-  overflow-x: auto;
-}
-
-.user-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
-}
-
-.user-table th, .user-table td {
-  padding: 15px;
-  text-align: left;
-  border-bottom: 1px solid #ddd;
-}
-
-.user-table th {
-  background-color: #f4f4f4;
-}
-
-.user-table th#first {
-  background-color: #f4f4f4;
-  border-top-left-radius: 15px;
-}
-
-.user-table th#last {
-  background-color: #f4f4f4;
-  border-top-right-radius: 15px;
-}
-
-.modal-overlay {
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  width: 100vw !important;
-  height: 100vh !important;
-  background-color: rgba(0, 0, 0, 0.8) !important;
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-  z-index: 999999 !important;
-}
-
-.modal {
-  background-color: white !important;
-  padding: 30px !important;
-  border-radius: 8px !important;
-  width: 400px !important;
-  max-width: 90vw !important;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important;
-  position: relative !important;
-  z-index: 1000000 !important;
-}
-
-.modal h2 {
-  margin-bottom: 20px;
-  font-size: 24px;
-  color: #000F42;
-}
-
-.form-group {
-  margin-bottom: 15px;
-}
-
-.form-group label {
-  display: block;
-  font-size: 14px;
-  color: #333;
-  margin-bottom: 5px;
-  font-weight: 500;
-}
-
-.form-group input, .form-group select {
-  width: 100%;
-  padding: 10px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  font-size: 16px;
-  box-sizing: border-box;
-}
-
-.form-group input:focus, .form-group select:focus {
-  outline: none;
-  border-color: #000F42;
-  box-shadow: 0 0 0 2px rgba(0, 15, 66, 0.1);
-}
-
-.form-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: 20px;
-}
-
-button[type="submit"] {
-  background-color: #000F42;
-  color: white;
-  padding: 12px 20px;
-  font-size: 16px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-button[type="submit"]:hover {
-  background-color: #003366;
-}
-
-button[type="button"] {
-  background-color: #6c757d;
-  color: white;
-  padding: 12px 20px;
-  font-size: 16px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-button[type="button"]:hover {
-  background-color: #5a6268;
-}
-
-/* Адаптивность для модального окна */
-@media (max-width: 768px) {
-  .modal {
-    width: 90%;
-    padding: 20px;
-  }
-  
-  .form-actions {
-    flex-direction: column;
-  }
-  
-  .form-actions button {
-    width: 100%;
-  }
-}
 </style>

@@ -10,7 +10,7 @@
         <p>
           <b>Turan Business Development — коммуникационное агентство,</b>
           объединяющее опыт в стратегических коммуникациях, GR, PR и управлении
-          репутацией. Мы создаём устойчивые смыслы, формируем довериеи
+          репутацией. Мы создаём устойчивые смыслы, формируем доверие и
           выстраиваем диалог между бизнесом, государством и обществом.
         </p>
         <p>
@@ -141,6 +141,7 @@
 </template>
 
 <script>
+import { useI18n } from 'vue-i18n';
 import { ref, onMounted, onUnmounted } from "vue";
 import PopupContact from "@/components/home/PopupContact.vue";
 import axios from 'axios';

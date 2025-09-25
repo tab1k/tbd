@@ -15,13 +15,20 @@
         <!-- Actual content -->
         <div v-else class="col-md-3" v-for="member in team" :key="member.id">
           <div class="team-card">
-            <div class="photo">
-              <img 
-                :src="getMemberPhotoUrl(member.photo)" 
-                :alt="member.name"
-                loading="lazy"
-                @error="handleImageError"
-              >
+            <div class="photo-container">
+              <div class="photo-wrapper">
+                <div class="photo-front">
+                  <img 
+                    :src="getMemberPhotoUrl(member.photo)" 
+                    :alt="member.name"
+                    loading="lazy"
+                    @error="handleImageError"
+                  >
+                </div>
+                <div class="photo-back">
+                  <p class="description">{{ member.description || 'Описание отсутствует' }}</p>
+                </div>
+              </div>
             </div>
             <h5 class="mt-3">{{ member.name }}</h5>
             <p>{{ member.role }}</p>
@@ -97,21 +104,61 @@ export default {
   padding: 0px;
 }
 
-.photo {
+.photo-container {
   width: 100%;
   aspect-ratio: 1 / 1;
-  overflow: hidden;
+  perspective: 1000px;
+}
+
+.photo-wrapper {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+}
+
+.team-card:hover .photo-wrapper {
+  transform: rotateY(180deg);
+}
+
+.photo-front, .photo-back {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  backface-visibility: hidden;
   border-radius: 12px;
+  overflow: hidden;
+}
+
+.photo-front {
   background-color: #f0f0f0;
 }
 
-.photo img {
+.photo-front img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
-
   transition: opacity 0.3s ease;
+}
+
+.photo-back {
+  background: linear-gradient(135deg, #667eea 0%, #000f42 100%);
+  color: white;
+  transform: rotateY(180deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  text-align: center;
+}
+
+.photo-back .description {
+  font-size: 14px;
+  line-height: 1.4;
+  margin: 0;
+  text-align: left;
 }
 
 .photo img.loaded {
@@ -170,12 +217,22 @@ export default {
   .col-md-3 + .col-md-3 {
     margin-left: 15px;
   }
+  
+  /* Для мобильных устройств - замена hover на click */
+  .photo-wrapper.flipped {
+    transform: rotateY(180deg);
+  }
 }
 
 /* Оптимизация для мобильных устройств */
 @media (max-width: 480px) {
-  .photo {
-    aspect-ratio: 1; /* Более подходящее соотношение для мобильных */
+  .photo-container {
+    aspect-ratio: 1;
+  }
+  
+  .photo-back .description {
+    font-size: 15px;
+    
   }
 }
 </style>

@@ -14,12 +14,20 @@
             <div class="skeleton-logo" v-for="n in 6" :key="n"></div>
           </div>
 
-          <div v-if="!loading && !error">
+          <div v-if="!loading && !error" class="partners-wrapper">
             <div class="partners-grid">
               <div class="partners-row">
+                <!-- Дублируем логотипы для бесшовной анимации -->
                 <img 
                   v-for="logo in logos" 
                   :key="logo.id" 
+                  :src="getImageUrl(logo.image)" 
+                  :alt="logo.title || 'partner logo'" 
+                  loading="lazy"
+                />
+                <img 
+                  v-for="logo in logos" 
+                  :key="`duplicate-${logo.id}`" 
                   :src="getImageUrl(logo.image)" 
                   :alt="logo.title || 'partner logo'" 
                   loading="lazy"
@@ -94,19 +102,25 @@ export default {
   text-align: start;
 }
 
+/* Обертка для бегущей строки */
+.partners-wrapper {
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
 /* Контейнер для строк */
 .partners-grid {
   display: flex;
-  overflow: hidden;
-  justify-content: center;
+  width: max-content;
 }
 
 /* Строка с логотипами */
 .partners-row {
   display: flex;
-  white-space: nowrap;
-  animation: moveLeft 15s linear infinite;
+  animation: moveLeft 40s linear infinite;
   gap: 30px;
+  padding: 10px 0;
 }
 
 /* Анимация движения логотипов влево */
@@ -123,8 +137,10 @@ export default {
 .partners-row img {
   object-fit: contain;
   transition: all 0.3s ease;
-  max-width: 100%;
+  max-width: none;
+  width: auto;
   max-height: 45px;
+  flex-shrink: 0;
 }
 
 .partners-row img:hover {
@@ -167,8 +183,20 @@ export default {
 
 /* Мобильная версия (до 768px) */
 @media (max-width: 768px) {
+  .container-mode {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  
+  .partners-text {
+    text-align: center;
+    margin-bottom: 20px !important;
+    font-size: 14px;
+  }
+
   .partners-row {
     gap: 20px;
+    animation-duration: 30s;
   }
 
   .partners-row img {
@@ -182,13 +210,20 @@ export default {
     gap: 15px;
   }
 
-  .container-mode {
-    padding-left: 20px;
-    padding-right: 20px;
+  .partners-row img {
+    max-height: 25px;
+  }
+}
+
+/* Очень маленькие экраны */
+@media (max-width: 400px) {
+  .partners-row {
+    gap: 12px;
+    animation-duration: 15s;
   }
 
   .partners-row img {
-    max-height: 25px;
+    max-height: 22px;
   }
 }
 
@@ -198,6 +233,7 @@ export default {
   flex-wrap: nowrap;
   gap: 30px;
   justify-content: center;
+  overflow: hidden;
 }
 
 .skeleton-logo {
@@ -206,6 +242,7 @@ export default {
   height: 45px;
   border-radius: 4px;
   animation: skeleton-loading 1.5s infinite ease-in-out;
+  flex-shrink: 0;
 }
 
 @keyframes skeleton-loading {
@@ -224,5 +261,6 @@ export default {
   text-align: center;
   font-size: 18px;
   color: red;
+  padding: 20px;
 }
 </style>

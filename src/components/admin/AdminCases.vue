@@ -1,5 +1,5 @@
 <template>
-  <div class="admin-cases">
+  <div class="admin-page">
     <div class="mb-3">
       <a class="link-back" href="/admin">Назад</a>
     </div>
@@ -19,7 +19,7 @@
         class="search-input"
       />
       <!-- Плюсик для добавления кейса -->
-      <button class="add-user-btn" @click="openAddCaseModal">
+      <button class="add-btn" @click="openAddCaseModal">
         <span class="plus-icon">+</span>
       </button>
     </div>
@@ -31,7 +31,7 @@
 
     <!-- Таблица с кейсами -->
     <div class="table-responsive">
-      <table class="case-table">
+      <table class="data-table">
         <thead>
           <tr>
             <th id="first">Название</th>
@@ -50,7 +50,7 @@
                      :key="index"
                      :src="getImageUrl(img?.image)" 
                      alt="Изображение кейса" 
-                     class="table-image"
+                     class="table-image-small"
                      @error="handleImageError" />
                 <span v-if="caseItem.images.length > 3" class="more-images">
                   +{{ caseItem.images.length - 3 }}
@@ -80,7 +80,6 @@
           <div class="current-images-grid">
             <div v-for="(img, index) in caseForm.images" :key="index" class="current-image-item">
               <img :src="getImageUrl(img?.image)" alt="Текущее изображение" class="current-image" />
-              <button type="button" @click="removeCurrentImage(index)" class="remove-image-btn">×</button>
             </div>
           </div>
         </div>
@@ -105,7 +104,6 @@
               <div class="selected-images-grid">
                 <div v-for="(file, index) in selectedImageFiles" :key="index" class="selected-image-item">
                   <img :src="getFilePreview(file)" alt="Превью" class="selected-image" />
-                  <button type="button" @click="removeSelectedImage(index)" class="remove-image-btn">×</button>
                   <p class="image-name">{{ file.name }}</p>
                 </div>
               </div>
@@ -126,6 +124,7 @@
 </template>
 
 <script>
+import '@/assets/css/common-admin.css';
 import axios from 'axios';
 import { API_URL, MEDIA_API_URL } from '@/config';
 
@@ -361,403 +360,5 @@ export default {
 </script>
 
 <style scoped>
-.admin-cases {
-  padding: 30px;
-  font-family: 'Montserrat', sans-serif;
-  position: relative;
-  z-index: 1;
-}
 
-.page-header {
-  text-align: left;
-  margin-bottom: 1rem;
-}
-
-.page-header h1 {
-  font-size: 30px;
-  margin: 0;
-  color: #000F42;
-}
-
-.page-header p {
-  font-size: 15px;
-  color: #555;
-}
-
-.filters {
-  display: flex;
-  align-items: center;
-  margin-bottom: 20px;
-  gap: 10px;
-}
-
-.search-input {
-  height: 40px;
-  padding: 0 10px;
-  font-size: 14px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  flex: 1;
-  max-width: 400px;
-  box-sizing: border-box;
-}
-
-.add-user-btn {
-  background-color: #000F42;
-  color: #fff;
-  border: none;
-  font-size: 24px;
-  width: 45px;
-  height: 40px;
-  border-radius: 8px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.add-user-btn:hover {
-  background-color: #003366;
-}
-
-.plus-icon {
-  font-size: 24px;
-  font-weight: bold;
-}
-
-.error-message {
-  background-color: #f8d7da;
-  color: #721c24;
-  padding: 10px;
-  border-radius: 4px;
-  margin-bottom: 20px;
-  border: 1px solid #f5c6cb;
-}
-
-.table-responsive {
-  overflow-x: auto;
-}
-
-.case-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
-}
-
-.case-table th, .case-table td {
-  padding: 15px;
-  text-align: left;
-  border-bottom: 1px solid #ddd;
-}
-
-.case-table th {
-  background-color: #f4f4f4;
-}
-
-.case-table th#first {
-  border-top-left-radius: 15px;
-}
-
-.case-table th#last {
-  border-top-right-radius: 15px;
-}
-
-/* Стили для изображений */
-.images-preview {
-  display: flex;
-  gap: 5px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.table-image {
-  width: 40px;
-  height: 40px;
-  object-fit: cover;
-  border-radius: 4px;
-  border: 1px solid #ddd;
-}
-
-.more-images {
-  font-size: 12px;
-  color: #666;
-  background: #f0f0f0;
-  padding: 2px 6px;
-  border-radius: 10px;
-}
-
-/* Модальное окно - ИСПРАВЛЕННЫЕ СТИЛИ */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.8);
-  z-index: 10000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-}
-
-.modal-content {
-  background: white;
-  padding: 30px;
-  border-radius: 8px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-  max-width: 90vw;
-  width: 600px;
-  max-height: 90vh;
-  overflow-y: auto;
-  position: relative;
-  z-index: 10001;
-}
-
-.modal-content h2 {
-  margin-bottom: 20px;
-  font-size: 24px;
-  color: #000F42;
-}
-
-/* Остальные стили остаются без изменений */
-.form-group {
-  margin-bottom: 20px;
-}
-
-.form-group label {
-  display: block;
-  font-size: 14px;
-  color: #333;
-  margin-bottom: 5px;
-  font-weight: 500;
-}
-
-.form-group input,
-.form-group textarea {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  box-sizing: border-box;
-  font-size: 16px;
-}
-
-.form-group textarea {
-  min-height: 100px;
-  resize: vertical;
-}
-
-.file-hint {
-  font-size: 12px;
-  color: #666;
-  margin-top: 5px;
-  margin-bottom: 0;
-}
-
-.section-title {
-  font-size: 14px;
-  color: #333;
-  margin-bottom: 10px;
-  font-weight: 500;
-}
-
-.current-images-grid,
-.selected-images-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 15px;
-  margin-bottom: 20px;
-}
-
-.current-image-item,
-.selected-image-item {
-  position: relative;
-  border: 2px solid #eee;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.current-image,
-.selected-image {
-  width: 100%;
-  height: 100px;
-  object-fit: cover;
-  display: block;
-}
-
-.image-name {
-  padding: 5px;
-  font-size: 11px;
-  color: #666;
-  text-align: center;
-  background: #f9f9f9;
-  margin: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.remove-image-btn {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  background: rgba(220, 53, 69, 0.8);
-  color: white;
-  border: none;
-  border-radius: 50%;
-  width: 24px;
-  height: 24px;
-  font-size: 16px;
-  line-height: 1;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background-color 0.3s;
-}
-
-.remove-image-btn:hover {
-  background: rgba(220, 53, 69, 1);
-}
-
-.modal-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.btn-primary {
-  background: #000F42;
-  color: white;
-  padding: 12px 20px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 16px;
-  transition: background-color 0.3s;
-}
-
-.btn-primary:hover {
-  background: #003366;
-}
-
-.btn-secondary {
-  background: #6c757d;
-  color: white;
-  padding: 12px 20px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 16px;
-  transition: background-color 0.3s;
-}
-
-.btn-secondary:hover {
-  background: #5a6268;
-}
-
-.action-btn {
-  padding: 8px 16px;
-  font-size: 14px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-  border: none;
-  margin-right: 10px;
-  margin-bottom: 5px;
-}
-
-.edit-btn {
-  background-color: #000F42;
-  color: white;
-}
-
-.edit-btn:hover {
-  background-color: #003366;
-}
-
-.delete-btn {
-  background-color: #dc3545;
-  color: white;
-}
-
-.delete-btn:hover {
-  background-color: #c82333;
-}
-
-.link-back {
-  display: inline-flex;
-  align-items: center;
-  padding: 8px 8px 6px;
-  padding-left: 28px;
-  color: #262a31;
-  font-weight: 700;
-  font-size: 12px;
-  letter-spacing: .01em;
-  text-transform: uppercase;
-  background-color: #f5f7f8;
-  border-radius: 8px;
-  position: relative;
-  line-height: 13px;
-  text-decoration: none;
-}
-
-.link-back:before {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 8px;
-  transform: translateY(-50%);
-  width: 16px;
-  height: 16px;
-  background: #262a31;
-  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z'/%3E%3C/svg%3E") no-repeat center;
-}
-
-@media (max-width: 768px) {
-  .admin-cases {
-    padding: 20px;
-  }
-  
-  .filters {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  
-  .search-input {
-    max-width: none;
-    margin-bottom: 10px;
-  }
-  
-  .case-table th, .case-table td {
-    padding: 10px;
-    font-size: 14px;
-  }
-  
-  .action-btn {
-    width: 100%;
-    margin-right: 0;
-  }
-  
-  .modal-content {
-    padding: 20px;
-  }
-  
-  .current-images-grid,
-  .selected-images-grid {
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    gap: 10px;
-  }
-  
-  .modal-actions {
-    flex-direction: column;
-  }
-  
-  .btn-primary,
-  .btn-secondary {
-    width: 100%;
-  }
-}
 </style>

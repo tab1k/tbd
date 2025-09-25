@@ -7,10 +7,10 @@
       </div>
 
       <div class="dashboard-stats">
-        <div class="stat-card" @click="goToRequests">
+        <div class="stat-card" @click="goToUsers">
           <div class="card-content">
-            <h2>Отклики</h2>
-            <p>{{ stats.requests }}</p>
+            <h2>Пользователи</h2>
+            <p>{{ stats.users }}</p>
           </div>
         </div>
         <div class="stat-card" @click="goToCases">
@@ -73,13 +73,14 @@
 </template>
 
 <script>
-import { API_URL, MEDIA_API_URL } from '@/config';
+import { MEDIA_API_URL } from '@/config';
 
 export default {
   name: 'AdminPanel',
   data() {
     return {
       stats: {
+        users: 0,
         requests: 0,
         videos: 0,
         team_members: 0,
