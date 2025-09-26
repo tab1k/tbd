@@ -74,14 +74,6 @@
             </button>
             <button 
               class="language-option"
-              :class="{ active: currentLanguage === 'KZ' }"
-              @click="setLanguage('KZ')"
-            >
-              <span class="language-flag">🇰🇿</span>
-              Қазақша
-            </button>
-            <button 
-              class="language-option"
               :class="{ active: currentLanguage === 'EN' }"
               @click="setLanguage('EN')"
             >
@@ -121,24 +113,13 @@
             </button>
             <button 
               class="language-option-mobile"
-              :class="{ active: currentLanguage === 'KZ' }"
-              @click="setLanguage('KZ')"
-            >
-              <span class="language-flag">🇰🇿</span>
-              <div>
-                <div class="language-name">Қазақша</div>
-                <div class="language-native">Kazakh</div>
-              </div>
-            </button>
-            <button 
-              class="language-option-mobile"
               :class="{ active: currentLanguage === 'EN' }"
               @click="setLanguage('EN')"
             >
               <span class="language-flag">🇺🇸</span>
               <div>
-                <div class="language-name">English</div>
-                <div class="language-native">Английский</div>
+                <div class="language-name">Английский</div>
+                <div class="language-native">English</div>
               </div>
             </button>
           </div>

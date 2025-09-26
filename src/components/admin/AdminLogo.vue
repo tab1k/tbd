@@ -37,7 +37,16 @@
         <tbody>
           <tr v-for="logo in filteredLogos" :key="logo.id">
             <td>{{ logo.title }}</td>
-  
+            <!-- Добавлена колонка для изображения -->
+            <td>
+              <img 
+                v-if="logo.image" 
+                :src="getImageUrl(logo.image)" 
+                :alt="logo.title" 
+                class="logo-image"
+              />
+              <span v-else>Нет изображения</span>
+            </td>
             <td>
               <button @click="editLogo(logo)" class="action-btn edit-btn">Редактировать</button>
               <button @click="deleteLogo(logo.id)" class="action-btn delete-btn">Удалить</button>
@@ -62,8 +71,12 @@
             <input type="file" ref="imageInput" @change="handleImageChange" id="image" accept="image/*" />
             <p class="file-hint">Поддерживаемые форматы: JPG, PNG, GIF</p>
             <!-- Превью изображения -->
-            <div v-if="logoForm.image" class="image-preview">
-              <img :src="getImageUrl(logoForm.image)" alt="Логотип" class="selected-image" />
+            <div v-if="logoForm.image || (isEditMode && logoForm.image)" class="image-preview">
+              <img 
+                :src="getPreviewImageUrl()" 
+                alt="Логотип" 
+                class="selected-image" 
+              />
             </div>
           </div>
           <div class="modal-actions">
@@ -103,7 +116,25 @@ export default {
     };
   },
   methods: {
+    // Получение URL изображения
+    getImageUrl(imagePath) {
+      if (!imagePath) return '';
+      // Если это полный URL, возвращаем как есть
+      if (imagePath.startsWith('http')) return imagePath;
+      // Если это относительный путь, добавляем базовый URL
+      return `${MEDIA_API_URL}${imagePath.startsWith('/') ? '' : '/'}${imagePath}`;
+    },
 
+    // Получение URL для превью в модальном окне
+    getPreviewImageUrl() {
+      if (this.selectedImageFile) {
+        return URL.createObjectURL(this.selectedImageFile);
+      }
+      if (this.logoForm.image) {
+        return this.getImageUrl(this.logoForm.image);
+      }
+      return '';
+    },
 
     // Загрузка логотипов
     async fetchLogos() {
@@ -122,7 +153,9 @@ export default {
       this.isEditMode = false;
       this.logoForm = { id: null, title: '', image: null };
       this.selectedImageFile = null;
-      this.$refs.imageInput.value = ''; // Очистить input для файла
+      if (this.$refs.imageInput) {
+        this.$refs.imageInput.value = ''; // Очистить input для файла
+      }
     },
 
     // Закрытие модального окна
@@ -135,14 +168,11 @@ export default {
       const file = event.target.files[0];
       if (file) {
         this.selectedImageFile = file;
-        this.logoForm.image = file.name; // Сохраняем имя файла
+        // Для нового логотипа сохраняем файл, для редактирования - имя файла
+        if (!this.isEditMode) {
+          this.logoForm.image = file.name;
+        }
       }
-    },
-
-    // Удаление текущего изображения (при редактировании)
-    removeCurrentImage() {
-      this.logoForm.image = null;
-      this.selectedImageFile = null;
     },
 
     // Отправка формы для добавления/редактирования логотипа
@@ -182,11 +212,13 @@ export default {
 
     // Удаление логотипа
     async deleteLogo(id) {
-      try {
-        await axios.delete(`${MEDIA_API_URL}/admin-panel/logo/${id}/`);
-        this.fetchLogos(); // Обновляем список логотипов
-      } catch (error) {
-        console.error('Ошибка при удалении логотипа:', error);
+      if (confirm('Вы уверены, что хотите удалить этот логотип?')) {
+        try {
+          await axios.delete(`${MEDIA_API_URL}/admin-panel/logo/${id}/`);
+          this.fetchLogos(); // Обновляем список логотипов
+        } catch (error) {
+          console.error('Ошибка при удалении логотипа:', error);
+        }
       }
     },
 
@@ -205,5 +237,20 @@ export default {
 </script>
 
 <style scoped>
+.logo-image {
+  max-width: 100px;
+  max-height: 60px;
+  object-fit: contain;
+}
 
+.selected-image {
+  max-width: 200px;
+  max-height: 120px;
+  object-fit: contain;
+  margin-top: 10px;
+}
+
+.image-preview {
+  margin-top: 10px;
+}
 </style>

@@ -34,16 +34,20 @@
       <table class="data-table">
         <thead>
           <tr>
-            <th id="first">Название</th>
-            <th>Описание</th>
+            <th id="first">Название (рус)</th>
+            <th>Описание (рус)</th>
+            <th>Название (англ)</th>
+            <th>Описание (англ)</th>
             <th>Изображения</th>
             <th id="last">Действия</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="caseItem in filteredCases" :key="caseItem?.id || caseItem?.title">
-            <td>{{ caseItem?.title || 'Без названия' }}</td>
-            <td>{{ caseItem?.description || 'Без описания' }}</td>
+          <tr v-for="caseItem in filteredCases" :key="caseItem?.id">
+            <td>{{ getCaseTitle(caseItem, 'ru') }}</td>
+            <td>{{ getCaseDescription(caseItem, 'ru') }}</td>
+            <td>{{ getCaseTitle(caseItem, 'en') }}</td>
+            <td>{{ getCaseDescription(caseItem, 'en') }}</td>
             <td>
               <div v-if="caseItem?.images && caseItem.images.length > 0" class="images-preview">
                 <img v-for="(img, index) in caseItem.images.slice(0, 3)" 
@@ -85,14 +89,37 @@
         </div>
         
         <form @submit.prevent="submitForm">
-          <div class="form-group">
-            <label for="title">Название:</label>
-            <input type="text" v-model="caseForm.title" id="title" required />
+          <!-- Поля для создания -->
+          <div v-if="!isEditMode" class="form-group">
+            <label for="title">Название (русский):</label>
+            <input type="text" v-model="caseForm.title_ru" id="title" required />
           </div>
-          <div class="form-group">
-            <label for="description">Описание:</label>
-            <textarea v-model="caseForm.description" id="description" required></textarea>
+          <div v-if="!isEditMode" class="form-group">
+            <label for="description">Описание (русский):</label>
+            <textarea v-model="caseForm.description_ru" id="description" required></textarea>
           </div>
+
+          <!-- Поля для редактирования -->
+          <div v-if="isEditMode" class="form-group">
+            <label for="title_ru">Название (русский):</label>
+            <input type="text" v-model="caseForm.title_ru" id="title_ru" required />
+          </div>
+          <div v-if="isEditMode" class="form-group">
+            <label for="description_ru">Описание (русский):</label>
+            <textarea v-model="caseForm.description_ru" id="description_ru" required></textarea>
+          </div>
+
+          <hr>
+          <div v-if="isEditMode" class="form-group">
+            <label for="title_en">Название (английский):</label>
+            <input type="text" v-model="caseForm.title_en" id="title_en" />
+          </div>
+          
+          <div v-if="isEditMode" class="form-group">
+            <label for="description_en">Описание (английский):</label>
+            <textarea v-model="caseForm.description_en" id="description_en"></textarea>
+          </div>
+
           <div class="form-group">
             <label for="images">Изображения:</label>
             <input type="file" ref="imagesInput" @change="handleImagesChange" id="images" accept="image/*" multiple />
@@ -105,6 +132,7 @@
                 <div v-for="(file, index) in selectedImageFiles" :key="index" class="selected-image-item">
                   <img :src="getFilePreview(file)" alt="Превью" class="selected-image" />
                   <p class="image-name">{{ file.name }}</p>
+                  <button @click="removeSelectedImage(index)" class="remove-selected-btn">×</button>
                 </div>
               </div>
             </div>
@@ -139,35 +167,54 @@ export default {
       isEditMode: false,
       caseForm: {
         id: null,
-        title: '',
-        description: '',
+        title_ru: '',
+        title_en: '',
+        description_ru: '',
+        description_en: '',
         images: [],
       },
       selectedImageFiles: [],
-      imagesToDelete: [],
       error: null,
     };
   },
   methods: {
-    // Получение полного URL для изображений
     getImageUrl(imagePath) {
       if (!imagePath) return '';
       if (imagePath.startsWith('http')) return imagePath;
       return `${MEDIA_API_URL}${imagePath}`;
     },
 
-    // Загрузка кейсов - ИСПРАВЛЕННЫЙ ENDPOINT ДЛЯ АДМИНКИ
+    getCaseTitle(caseItem, language = 'ru') {
+      if (!caseItem) return 'Без названия';
+      if (language === 'ru') {
+        return caseItem.title_ru || caseItem.title || 'Без названия';
+      } else {
+        return caseItem.title_en || 'No title';
+      }
+    },
+
+    getCaseDescription(caseItem, language = 'ru') {
+      if (!caseItem) return 'Без описания';
+      if (language === 'ru') {
+        return caseItem.description_ru || caseItem.description || 'Без описания';
+      } else {
+        return caseItem.description_en || 'No description';
+      }
+    },
+
     async fetchCases() {
       try {
         console.log('Запрашиваем кейсы из админки...');
-        // Используем endpoint админки
         const response = await axios.get(`${MEDIA_API_URL}/admin-panel/cases/`);
         
-        // Фильтруем null значения и добавляем проверки
         this.cases = (response.data || []).map(caseItem => ({
           id: caseItem?.id || null,
-          title: caseItem?.title || 'Без названия',
-          description: caseItem?.description || 'Без описания',
+          title: caseItem?.title || '',
+          description: caseItem?.description || '',
+          title_ru: caseItem?.title_ru || '',
+          title_en: caseItem?.title_en || '',
+          description_ru: caseItem?.description_ru || '',
+          description_en: caseItem?.description_en || '',
           images: Array.isArray(caseItem?.images) ? caseItem.images : []
         }));
         
@@ -182,47 +229,45 @@ export default {
       }
     },
 
-    // Открытие модального окна для добавления
     openAddCaseModal() {
       this.isModalOpen = true;
       this.isEditMode = false;
-      this.caseForm = { id: null, title: '', description: '', images: [] };
+      this.caseForm = { 
+        id: null, 
+        title_ru: '', 
+        title_en: '', 
+        description_ru: '', 
+        description_en: '', 
+        images: [] 
+      };
       this.selectedImageFiles = [];
-      this.imagesToDelete = [];
       this.clearFileInput();
     },
 
-    // Закрытие модального окна
     closeModal() {
       this.isModalOpen = false;
       this.selectedImageFiles = [];
-      this.imagesToDelete = [];
     },
 
-    // Очистка input файлов
     clearFileInput() {
       if (this.$refs.imagesInput) {
         this.$refs.imagesInput.value = '';
       }
     },
 
-    // Обработка выбора изображений
     handleImagesChange(event) {
       const files = Array.from(event.target.files);
       this.selectedImageFiles = files;
     },
 
-    // Получение превью файла
     getFilePreview(file) {
       return URL.createObjectURL(file);
     },
 
-    // Удаление выбранного изображения
     removeSelectedImage(index) {
       this.selectedImageFiles.splice(index, 1);
     },
 
-    // Удаление текущего изображения (при редактировании)
     async removeCurrentImage(index) {
       const image = this.caseForm.images[index];
       if (image && image.id) {
@@ -232,17 +277,26 @@ export default {
           this.caseForm.images.splice(index, 1);
         } catch (error) {
           console.error('Ошибка при удалении изображения:', error);
-          alert('Ошибка при удалении изображения');
+          alert('Ошибка при удаления изображения');
         }
       }
     },
 
-    // Отправка формы
     async submitForm() {
       try {
         const formData = new FormData();
-        formData.append('title', this.caseForm.title);
-        formData.append('description', this.caseForm.description);
+
+        if (this.isEditMode) {
+          // Для редактирования отправляем все четыре поля
+          formData.append('title_ru', this.caseForm.title_ru);
+          formData.append('title_en', this.caseForm.title_en);
+          formData.append('description_ru', this.caseForm.description_ru);
+          formData.append('description_en', this.caseForm.description_en);
+        } else {
+          // Для создания отправляем только русские поля
+          formData.append('title', this.caseForm.title_ru);
+          formData.append('description', this.caseForm.description_ru);
+        }
 
         // Добавляем новые изображения
         this.selectedImageFiles.forEach(file => {
@@ -250,7 +304,7 @@ export default {
         });
 
         if (this.isEditMode && this.caseForm.id) {
-          // Обновляем кейс через админку
+          // Обновляем кейс
           const response = await axios.put(
             `${MEDIA_API_URL}/admin-panel/cases/${this.caseForm.id}/`,
             formData,
@@ -264,10 +318,18 @@ export default {
           // Обновляем кейс в списке
           const index = this.cases.findIndex(item => item.id === this.caseForm.id);
           if (index !== -1) {
-            this.cases[index] = response.data;
+            this.cases[index] = {
+              ...response.data,
+              title: response.data.title || '',
+              description: response.data.description || '',
+              title_ru: response.data.title_ru || '',
+              title_en: response.data.title_en || '',
+              description_ru: response.data.description_ru || '',
+              description_en: response.data.description_en || ''
+            };
           }
         } else {
-          // Создаем новый кейс через админку
+          // Создаем новый кейс
           const response = await axios.post(
             `${MEDIA_API_URL}/admin-panel/cases/`,
             formData,
@@ -277,7 +339,15 @@ export default {
               }
             }
           );
-          this.cases.push(response.data);
+          this.cases.push({
+            ...response.data,
+            title: response.data.title || '',
+            description: response.data.description || '',
+            title_ru: response.data.title_ru || '',
+            title_en: response.data.title_en || '',
+            description_ru: response.data.description_ru || '',
+            description_en: response.data.description_en || ''
+          });
         }
 
         this.closeModal();
@@ -294,17 +364,17 @@ export default {
       }
     },
 
-    // Фильтрация кейсов
     filterCases() {
       if (!this.cases.length) return;
       
       this.filteredCases = this.cases.filter(caseItem =>
-        (caseItem?.title || '').toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-        (caseItem?.description || '').toLowerCase().includes(this.searchQuery.toLowerCase())
+        this.getCaseTitle(caseItem, 'ru').toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+        this.getCaseDescription(caseItem, 'ru').toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+        this.getCaseTitle(caseItem, 'en').toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+        this.getCaseDescription(caseItem, 'en').toLowerCase().includes(this.searchQuery.toLowerCase())
       );
     },
 
-    // Редактирование кейса
     editCase(caseItem) {
       if (!caseItem?.id) {
         console.error('Нельзя редактировать кейс без ID');
@@ -313,24 +383,27 @@ export default {
       
       this.isModalOpen = true;
       this.isEditMode = true;
+      
+      // Заполняем ВСЕ поля из данных кейса
       this.caseForm = {
         id: caseItem.id,
-        title: caseItem.title || '',
-        description: caseItem.description || '',
+        title_ru: caseItem.title_ru || '',
+        title_en: caseItem.title_en || '',
+        description_ru: caseItem.description_ru || '',
+        description_en: caseItem.description_en || '',
         images: Array.isArray(caseItem.images) ? [...caseItem.images] : []
       };
+      
+      console.log('Редактируем кейс:', this.caseForm);
       this.selectedImageFiles = [];
-      this.imagesToDelete = [];
       this.clearFileInput();
     },
 
-    // Обработка ошибок загрузки изображений
     handleImageError(event) {
       console.error('Ошибка загрузки изображения:', event.target.src);
       event.target.style.display = 'none';
     },
 
-    // Удаление кейса
     async deleteCase(id) {
       if (!id) {
         console.error('Нельзя удалить кейс без ID');
@@ -360,5 +433,52 @@ export default {
 </script>
 
 <style scoped>
+.current-images-grid, .selected-images-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
 
+.current-image-item, .selected-image-item {
+  position: relative;
+}
+
+.current-image, .selected-image {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+
+.section-title {
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.image-name {
+  font-size: 12px;
+  margin-top: 5px;
+  word-break: break-all;
+}
+
+.table-image-small {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  margin-right: 5px;
+  border-radius: 3px;
+}
+
+.images-preview {
+  display: flex;
+  align-items: center;
+}
+
+.more-images {
+  color: #666;
+  font-size: 12px;
+}
 </style>
