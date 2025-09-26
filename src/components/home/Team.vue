@@ -60,6 +60,17 @@ export default {
       try {        
         const response = await axios.get(`${API_URL}/team/`);
         
+        console.log('=== TEAM DATA DEBUG ===');
+        console.log('Full response:', response.data);
+        
+        // Проверь первый элемент
+        if (response.data.length > 0) {
+          const firstMember = response.data[0];
+          console.log('First team member:', firstMember);
+          console.log('Photo field:', firstMember.photo);
+          console.log('Photo URL will be:', this.getMemberPhotoUrl(firstMember.photo));
+        }
+        
         this.team = response.data;
         
       } catch (error) {
@@ -71,13 +82,25 @@ export default {
     },
     
     getMemberPhotoUrl(photo) {
+      console.log('getMemberPhotoUrl called with:', photo);
+      
       if (!photo) {
         console.log('No photo provided, using default');
-        return 'assets/img/default-avatar.png';
+        return '/assets/img/default-avatar.png';
+      }
+      
+      // Если фото уже полный URL
+      if (photo.startsWith('http')) {
+        return photo;
+      }
+      
+      // Убери лишний слэш если есть
+      if (photo.startsWith('/')) {
+        photo = photo.substring(1);
       }
       
       const fullUrl = `${MEDIA_API_URL}${photo}`;
-      console.log('Building photo URL:', { photo, MEDIA_API_URL, fullUrl });
+      console.log('Built photo URL:', fullUrl);
       return fullUrl;
     },
     
@@ -87,7 +110,7 @@ export default {
         alt: event.target.alt
       });
       
-      // Fallback image
+      // Более надежный fallback
       event.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YzZjNmMyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjQiIGZpbGw9IiM5OTk5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj7QotC10YHRgtC+0LLRi9C5PC90ZXh0Pjwvc3ZnPg==';
     }
   }
