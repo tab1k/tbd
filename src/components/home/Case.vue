@@ -532,14 +532,33 @@ export default {
 
     getImageUrl(caseItem) {
       if (caseItem.images && caseItem.images.length > 0) {
-        return `${MEDIA_API_URL}${caseItem.images[0].image}`;
+        // Теперь images[0] это объект, берем поле image
+        const imagePath = caseItem.images[0].image;
+        
+        if (imagePath.startsWith('http')) {
+          return imagePath;
+        }
+        
+        const cleanPath = imagePath.startsWith('/') ? imagePath.substring(1) : imagePath;
+        return `${MEDIA_API_URL}${cleanPath}`;
       }
       return '/assets/img/placeholder.jpg';
     },
 
     getModalImageUrl(imageObj) {
-      if (!imageObj?.image) return '/assets/img/placeholder.jpg';
-      return `${MEDIA_API_URL}${imageObj.image}`;
+      // imageObj теперь объект, а не строка
+      if (!imageObj?.image) {
+        return '/assets/img/placeholder.jpg';
+      }
+      
+      const imagePath = imageObj.image;
+      
+      if (imagePath.startsWith('http')) {
+        return imagePath;
+      }
+      
+      const cleanPath = imagePath.startsWith('/') ? imagePath.substring(1) : imagePath;
+      return `${MEDIA_API_URL}${cleanPath}`;
     },
 
     getCaseIndex(caseItem) {
