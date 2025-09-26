@@ -2,23 +2,23 @@
   <div>
     <Hero />
     
-    <div data-aos="fade-up" data-aos-delay="100">
+    <div data-aos="fade-up" data-aos-delay="400">
       <About />
     </div>
     
-    <div data-aos="fade-left" data-aos-delay="200">
+    <div data-aos="fade-up" data-aos-delay="400">
       <Team />
     </div>
     
-    <div data-aos="fade-right" data-aos-delay="300">
+    <div data-aos="fade-up" data-aos-delay="400">
       <Partners />
     </div>
     
-    <div data-aos="zoom-in" data-aos-delay="400">
+    <div data-aos="fade-up" data-aos-delay="400">
       <Direction />
     </div>
     
-    <div data-aos="none">
+    <div data-aos="fade-up" data-aos-delay="400">
       <Case />
     </div>
     

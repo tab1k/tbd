@@ -56,7 +56,6 @@
             ref="languageBtn"
           >
             {{ currentLanguage }}
-            <i class="bi bi-chevron-down"></i>
           </button>
           
           <!-- Попап выбора языка -->
@@ -101,6 +100,7 @@
         v-if="isLanguageMobilePopupOpen" 
         class="language-mobile-popup-overlay"
         @click="closeLanguagePopup"
+        :class="{ 'no-scroll': isLanguageMobilePopupOpen }"
       >
         <div class="language-mobile-popup" @click.stop>
           <div class="language-popup-header">
@@ -188,20 +188,43 @@ export default {
     },
     
     toggleLanguagePopup() {
-      if (window.innerWidth < 992) {
-        // Мобильная версия
+      // Надежное определение мобильного устройства
+      const isMobile = this.isMobileDevice();
+      
+      if (isMobile) {
         this.isLanguageMobilePopupOpen = !this.isLanguageMobilePopupOpen;
         this.isLanguagePopupOpen = false;
+        
+        // Блокируем скролл тела страницы при открытии мобильного попапа
+        if (this.isLanguageMobilePopupOpen) {
+          document.body.style.overflow = 'hidden';
+          document.documentElement.style.overflow = 'hidden';
+        } else {
+          this.restoreScroll();
+        }
       } else {
-        // Десктоп версия
         this.isLanguagePopupOpen = !this.isLanguagePopupOpen;
         this.isLanguageMobilePopupOpen = false;
       }
     },
     
+    isMobileDevice() {
+      // Несколько способов определения мобильного устройства
+      return window.innerWidth < 992 || 
+             window.matchMedia('(max-width: 991px)').matches ||
+             window.innerHeight < 500 ||
+             'ontouchstart' in window;
+    },
+    
     closeLanguagePopup() {
       this.isLanguagePopupOpen = false;
       this.isLanguageMobilePopupOpen = false;
+      this.restoreScroll();
+    },
+    
+    restoreScroll() {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
     },
     
     // Закрытие попапа при клике вне его области
@@ -214,17 +237,41 @@ export default {
           !languagePopup.contains(event.target)) {
         this.closeLanguagePopup();
       }
+    },
+    
+    // Обработчик изменения размера окна
+    handleResize() {
+      // Закрываем языковой попап при изменении размера окна
+      if (window.innerWidth >= 992 && this.isLanguageMobilePopupOpen) {
+        this.closeLanguagePopup();
+      }
+      if (window.innerWidth < 992 && this.isLanguagePopupOpen) {
+        this.closeLanguagePopup();
+      }
+    },
+    
+    // Обработчик клавиши Escape
+    handleEscapeKey(event) {
+      if (event.key === 'Escape') {
+        this.closeLanguagePopup();
+        this.closeMenu();
+      }
     }
   },
   
   mounted() {
-    // Добавляем обработчик клика по документу для закрытия попапа
+    // Добавляем обработчики
     document.addEventListener('click', this.handleClickOutside);
+    window.addEventListener('resize', this.handleResize);
+    document.addEventListener('keydown', this.handleEscapeKey);
   },
   
   beforeUnmount() {
-    // Убираем обработчик при уничтожении компонента
+    // Убираем обработчики при уничтожении компонента
     document.removeEventListener('click', this.handleClickOutside);
+    window.removeEventListener('resize', this.handleResize);
+    document.removeEventListener('keydown', this.handleEscapeKey);
+    this.restoreScroll();
   }
 };
 </script>
@@ -376,6 +423,11 @@ header .navbar {
   align-items: center;
   justify-content: center;
   padding: 20px;
+  overflow: hidden;
+}
+
+.language-mobile-popup-overlay.no-scroll {
+  overflow: hidden;
 }
 
 .language-mobile-popup {
@@ -383,15 +435,12 @@ header .navbar {
   border-radius: 16px;
   padding: 0;
   width: 100%;
-  max-width: 320px;
-  max-height: 80vh;
+  max-width: min(320px, 90vw);
+  max-height: min(400px, 80vh);
   overflow-y: auto;
-  /* Центрирование */
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  margin: 0;
+  position: relative;
+  margin: auto;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
 .language-popup-header {
@@ -400,6 +449,11 @@ header .navbar {
   align-items: center;
   padding: 20px;
   border-bottom: 1px solid #eee;
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 1;
+  border-radius: 16px 16px 0 0;
 }
 
 .language-popup-header h3 {
@@ -421,6 +475,11 @@ header .navbar {
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: color 0.2s ease;
+}
+
+.close-btn:hover {
+  color: #000f42;
 }
 
 .language-options-mobile {
@@ -439,6 +498,7 @@ header .navbar {
   gap: 12px;
   transition: all 0.2s ease;
   cursor: pointer;
+  margin-bottom: 4px;
 }
 
 .language-option-mobile:hover {
@@ -450,8 +510,13 @@ header .navbar {
   font-weight: 500;
 }
 
+.language-option-mobile:last-child {
+  margin-bottom: 0;
+}
+
 .language-option-mobile .language-flag {
   font-size: 24px;
+  flex-shrink: 0;
 }
 
 .language-name {
@@ -492,8 +557,7 @@ header .navbar {
   
   /* Адаптивность мобильного попапа */
   .language-mobile-popup {
-    max-width: 90%;
-    margin: 0;
+    max-width: 95vw;
   }
 }
 
@@ -502,9 +566,23 @@ header .navbar {
     display: none !important;
   }
   
+  .language-mobile-popup-overlay {
+    padding: 15px;
+    align-items: flex-start;
+    padding-top: 10vh;
+  }
+  
   .language-mobile-popup {
-    max-width: 95%;
-    max-height: 85vh;
+    max-width: 95vw;
+    max-height: 75vh;
+  }
+  
+  .language-popup-header {
+    padding: 15px;
+  }
+  
+  .language-option-mobile {
+    padding: 12px;
   }
 }
 
@@ -516,17 +594,61 @@ header .navbar {
 
 /* Дополнительные стили для лучшего отображения на очень маленьких экранах */
 @media (max-width: 380px) {
+  .language-mobile-popup-overlay {
+    padding: 10px;
+    padding-top: 5vh;
+  }
+  
   .language-mobile-popup {
-    max-width: 98%;
-    max-height: 90vh;
+    max-width: 98vw;
+    max-height: 85vh;
   }
   
   .language-popup-header {
-    padding: 15px;
+    padding: 12px;
+  }
+  
+  .language-popup-header h3 {
+    font-size: 16px;
   }
   
   .language-option-mobile {
-    padding: 12px;
+    padding: 10px;
   }
+  
+  .language-name {
+    font-size: 15px;
+  }
+  
+  .language-native {
+    font-size: 13px;
+  }
+}
+
+/* Предотвращение скролла тела страницы когда открыт мобильный попап */
+body.no-scroll {
+  overflow: hidden !important;
+  position: fixed !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Улучшение скролла внутри попапа */
+.language-mobile-popup::-webkit-scrollbar {
+  width: 4px;
+}
+
+.language-mobile-popup::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 2px;
+}
+
+.language-mobile-popup::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 2px;
+}
+
+.language-mobile-popup::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
 }
 </style>
