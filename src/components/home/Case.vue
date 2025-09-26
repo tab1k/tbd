@@ -4,8 +4,8 @@
       <!-- Левая часть -->
       <div class="col-lg-3 col-md-4 mb-4 d-flex flex-column justify-content-between">
         <div>
-          <h2 class="fw-bold">Наши кейсы</h2>
-          <p class="text-muted">Реальные кейсы — как мы выстраиваем коммуникации, повышаем доверие и расширяем горизонты бизнеса</p>
+          <h2 class="fw-bold">{{ $t('cases.title') }}</h2>
+          <p class="text-muted">{{ $t('cases.subtitle') }}</p>
         </div>
         <div class="d-flex gap-2">
           <button class="btn btn-light border rounded-circle" data-bs-target="#casesCarousel" data-bs-slide="prev">
@@ -139,17 +139,17 @@
     <div class="row">
       <!-- Левая часть (30%) -->
       <div class="col-lg-3 col-md-4 mb-4">
-        <p style="color: #666F8E;">Наши проекты включают:</p>
+        <p style="color: #666F8E;">{{ $t('cases.projects') }}</p>
       </div>
 
       <!-- Правая часть (70%) -->
       <div class="col-lg-9 col-md-8">
         <ul class="list-unstyled project-list">
-          <li class="mb-2">— PR-сопровождение национальных и международных проектов</li>
-          <li class="mb-2">— Коммуникационные стратегии для IT, энергетики, здравоохранения, финансов</li>
-          <li class="mb-2">— Региональные GR-проекты в Центральной Азии и на Ближнем Востоке</li>
-          <li class="mb-2">— Организация отраслевых форумов, выставок, B2B, B2G диалогов</li>
-          <li class="mb-2">— Внутренние коммуникации и запуск трансформационных инициатив</li>
+          <li class="mb-2">{{ $t('cases.project1') }}</li>
+          <li class="mb-2">{{ $t('cases.project2') }}</li>
+          <li class="mb-2">{{ $t('cases.project3') }}</li>
+          <li class="mb-2">{{ $t('cases.project4') }}</li>
+          <li class="mb-2">{{ $t('cases.project5') }}</li>
         </ul>
       </div>
 

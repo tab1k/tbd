@@ -17,22 +17,22 @@
 
         <!-- Контакты -->
         <div class="col-6 col-md-2 mb-3">
-          <h6 class="fw-bold">Казахстан</h6>
+          <h6 class="fw-bold">{{ $t('country.kz') }}</h6>
           <p class="mb-0">+7 701 437 82 32</p>
           <p class="mb-0">marinali@tbd.bz</p>
         </div>
         <div class="col-6 col-md-2 mb-3">
-          <h6 class="fw-bold">США</h6>
+          <h6 class="fw-bold">{{ $t('country.usa') }}</h6>
           <p class="mb-0">+1 949 903 1678</p>
           <p class="mb-0">tbd@tbd.bz</p>
         </div>
         <div class="col-6 col-md-2 mb-3">
-          <h6 class="fw-bold">Узбекистан</h6>
+          <h6 class="fw-bold">{{ $t('country.uz') }}</h6>
           <p class="mb-0">+998 90 826 9530</p>
           <p class="mb-0">ibrayevaalt@tbd.bz</p>
         </div>
         <div class="col-6 col-md-3 mb-3">
-          <h6 class="fw-bold">Азербайджан</h6>
+          <h6 class="fw-bold">{{ $t('country.az') }}</h6>
           <p class="mb-0">+994 55 224 4640</p>
           <p class="mb-0">nhuseynzade@gmail.com</p>
         </div>
@@ -41,7 +41,7 @@
       <!-- Нижняя полоса -->
       <div class="row mt-4 pt-3 ">
         <div class="col-6 text-start">
-          <p class="mb-0">© 2025. Все права защищены.</p>
+          <p class="mb-0">© 2025. {{ $t('footer.rights') }}</p>
         </div>
         <div class="col-6 text-end">
           <p class="mb-0">

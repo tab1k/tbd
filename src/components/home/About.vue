@@ -58,26 +58,26 @@
 
         <!-- Текст -->
         <div class="col-md-6 mb-4 mb-md-0 order-2 order-md-1">
-          <h2 class="section-title mt-4">О нас</h2>
-          <p>Мы — команда экспертов с более чем 18-летним опытом в стратегических коммуникациях, управлении репутацией и построении устойчивых связей между бизнесом и обществом.</p>
+          <h2 class="section-title mt-4">{{ $t('about.title') }}</h2>
+          <p>{{ $t('about.description') }}</p>
           <p>
-            Turan Business Development основано как платформа, объединяющая лучшие практики и региональный контекст для создания сильных, прозрачных и результативных коммуникаций.
+            {{ $t('about.foundation') }}
           </p>
           <p>
-            Наше отличие:
+            {{ $t('about.difference') }}
           </p>
-          <p>— Глубокая экспертиза в чувствительных и регулируемых отраслях <br>
-            — Стратегический подход в каждой детали <br>
-            — Понимание политико-экономических реалий стран СНГ, Ближнего Востока и Европы
+          <p>{{ $t('about.features.expertise') }} <br>
+            {{ $t('about.features.strategy') }} <br>
+            {{ $t('about.features.understanding') }}
           </p>
 
           <p>
-            Мы не просто сопровождаем — мы встраиваемся в ваши цели, чтобы масштабировать их через смысл, диалог и доверие.
+            {{ $t('about.mission') }}
           </p>
 
           <!-- Кнопки -->
           <div class="btn-group mt-3">
-            <a href="#" class="btn-outline-accent">ПОСМОТРЕТЬ НАШИ КЕЙСЫ</a>
+            <a href="#" class="btn-outline-accent">{{ $t('about.casesButton') }}</a>
             <a href="tel:+77010000000" class="btn-icon">
               <img src="@/assets/svg/phone-call.svg" style="color: #1C2957;" alt="Позвонить" />
             </a>

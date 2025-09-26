@@ -10,9 +10,9 @@
         <div class="col-lg-5 col-md-6 col-12">
           <!-- Заголовок -->
           <div class="text-center mb-4">
-            <h2 class="fw-bold">Найдём решение под вас</h2>
+            <h2 class="fw-bold">{{ $t('consultation.title') }}</h2>
             <p class="text-muted">
-              Заполните форму — мы свяжемся с вами в ближайшее время
+              {{ $t('consultation.subtitle') }}
             </p>
           </div>
 
@@ -30,7 +30,7 @@
 
             <!-- Имя -->
             <div class="mb-3">
-              <label for="name" class="form-label">Имя</label>
+              <label for="name" class="form-label">{{ $t('consultation.name') }}</label>
               <input
                 v-model="name"
                 type="text"
@@ -43,7 +43,7 @@
 
             <!-- Телефон -->
             <div class="mb-3">
-              <label for="phone" class="form-label">Телефон</label>
+              <label for="phone" class="form-label">{{ $t('consultation.phone') }}</label>
               <input
                 v-model="phone"
                 type="tel"
@@ -57,7 +57,7 @@
             <!-- Кнопка -->
             <div class="d-grid mt-4">
               <button type="submit" class="btn btn-primary btn-lg rounded-pill">
-                Оставить заявку
+                {{ $t('common.request') }}
               </button>
             </div>
           </form>

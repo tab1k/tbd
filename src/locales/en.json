@@ -1,0 +1,84 @@
+{
+  "navigation": {
+    "about": "About Company",
+    "team": "Team",
+    "partners": "Partners and Clients",
+    "contacts": "Contacts",
+    "consultation": "Request Consultation",
+    "services" : "Services"
+  },
+  "hero": {
+    "tagline1": "We create trends.",
+    "tagline2": "We manage meanings",
+    "description": "Turan Business Development is a communication agency combining expertise in strategic communications, GR, PR, and reputation management. We create sustainable meanings, build trust, and establish dialogue between business, government, and society.",
+    "regions": "We are represented in Kazakhstan, Uzbekistan, Azerbaijan, and the USA, working across Central Asia, Caucasus, Middle East, and Europe regions."
+  },
+  "about": {
+    "title": "About Us",
+    "description": "We are a team of experts with over 18 years of experience in strategic communications, reputation management, and building sustainable connections between business and society.",
+    "foundation": "Turan Business Development was founded as a platform uniting best practices and regional context to create strong, transparent, and effective communications.",
+    "difference": "Our difference:",
+    "features": {
+      "expertise": "— Deep expertise in sensitive and regulated industries",
+      "strategy": "— Strategic approach in every detail",
+      "understanding": "— Understanding of political-economic realities in CIS, Middle East, and Europe countries"
+    },
+    "mission": "We don't just accompany — we integrate into your goals to scale them through meaning, dialogue, and trust.",
+    "casesButton": "View Our Cases"
+  },
+  "services": {
+    "title": "Our Services",
+    "pr": {
+      "title": "PR and Communications",
+      "description": "Expand the boundaries of your influence with our PR strategies.",
+      "description2": "At Turan Business Development, we know how to create powerful news hooks that will attract attention to your brand in Central Asia and beyond. We work with key media platforms and influencers to ensure your message is heard."
+    },
+    "gr": {
+      "title": "GR Support",
+      "description": "Interaction with the state requires precision, strategy, and understanding of processes. At Turan Business Development, we support businesses at all stages: from analyzing regulatory risks to building dialogue with government authorities and industry associations. We help form sustainable positions, providing clients with influence and stability in a changing environment."
+    },
+    "events": {
+      "title": "Event Organization",
+      "description": "Every event is a unique story that needs to be told to the world.",
+      "description_two" : "Turan Business Development organizes memorable events that not only meet your business goals but exceed customer expectations. Our approach combines creativity, attention to detail, and flawless execution."
+    },
+    "promotion": {
+      "title": "Promotion in Central Asia and Middle East Markets",
+      "description": "Turan Business Development helps companies scale and confidently enter Central Asian and Middle Eastern markets. We study local specifics, build connections, adapt communication, and open doors to new business ecosystems. With us, business speaks an understandable language and gains a sustainable presence in key regions."
+    }
+  },
+  "cases": {
+    "title": "Our Cases",
+    "subtitle": "Real cases — how we build communications, increase trust, and expand business horizons",
+    "projects": "Our projects include:",
+    "project1": "— PR support for national and international projects",
+    "project2": "— Communication strategies for IT, energy, healthcare, finance",
+    "project3": "— Regional GR projects in Central Asia and the Middle East",
+    "project4": "— Organization of industry forums, exhibitions, B2B, B2G dialogues",
+    "project5": "— Internal communications and launch of transformational initiatives"
+  },
+  "consultation": {
+    "title": "Find a Solution for You",
+    "subtitle": "Fill out the form — we will contact you shortly",
+    "name": "Name",
+    "namePlaceholder": "Your Name",
+    "phone": "Phone"
+  },
+  "footer": {
+    "rights": "All rights reserved."
+  },
+  "common": {
+    "readMore": "Read More",
+    "viewAll": "View All",
+    "contactUs": "Contact Us",
+    "learnMore": "Learn More",
+    "request" : "Submit a request"
+  },
+  "country": {
+    "kz" : "Kazakhstan",
+    "usa" : "USA",
+    "uz" : "Uzbekistan",
+    "az" : "Azerbaijan",
+    "select": "Language select"
+  }
+}

@@ -4,7 +4,7 @@
       <div class="row">
         <!-- Левая колонка: заголовок -->
         <div class="col-12 col-md-4">
-          <p class="partners-text mb-5">Наши партнёры и клиенты</p>
+          <p class="partners-text mb-5">{{ $t('navigation.partners') }}</p>
         </div>
 
         <!-- Правая колонка: логотипы -->

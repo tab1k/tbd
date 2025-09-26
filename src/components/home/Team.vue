@@ -1,7 +1,7 @@
 <template>
   <section id="team">
     <div class="container-mode mt-5">
-      <h2 class="mb-3">Команда</h2>
+      <h2 class="mb-3">{{ $t('navigation.team') }}</h2>
       <div class="row text-center g-2">
         <!-- Skeleton loading -->
         <div v-if="loading" class="col-md-3" v-for="n in 4" :key="`skeleton-${n}`">

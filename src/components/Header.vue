@@ -13,11 +13,13 @@
           class="language-mobile-btn me-2"
           @click="toggleLanguagePopup"
         >
-          {{ currentLanguage }}
+          {{ currentLanguageCode }}
         </button>
         
         <!-- Кнопка для планшетов -->
-        <a href="#" @click.prevent="openPopup" class="btn-accent btn-sm me-2 d-none d-sm-inline-block">ЗАКАЗАТЬ КОНСУЛЬТАЦИЮ</a>
+        <a href="#" @click.prevent="openPopup" class="btn-accent btn-sm me-2 d-none d-sm-inline-block">
+          {{ $t('navigation.consultation') }}
+        </a>
         
         <!-- Бургер -->
         <button
@@ -32,16 +34,16 @@
       <!-- Центрированное меню -->
       <div :class="['collapse', 'navbar-collapse', 'justify-content-center', 'flex-grow-1', { show: isMenuOpen }]" id="navmenu">
         <ul class="navbar-nav mx-auto">
-          <li class="nav-item"><a href="#about" class="nav-link" @click="closeMenu">О компании</a></li>
-          <li class="nav-item"><a href="#team" class="nav-link" @click="closeMenu">Команда</a></li>
-          <li class="nav-item"><a href="#partners" class="nav-link" @click="closeMenu">Партнёры и клиенты</a></li>
-          <li class="nav-item"><a href="#services" class="nav-link" @click="closeMenu">Услуги</a></li>
-          <li class="nav-item"><a href="#contacts" class="nav-link" @click="closeMenu">Контакты</a></li>
+          <li class="nav-item"><a href="#about" class="nav-link" @click="closeMenu">{{ $t('navigation.about') }}</a></li>
+          <li class="nav-item"><a href="#team" class="nav-link" @click="closeMenu">{{ $t('navigation.team') }}</a></li>
+          <li class="nav-item"><a href="#partners" class="nav-link" @click="closeMenu">{{ $t('navigation.partners') }}</a></li>
+          <li class="nav-item"><a href="#services" class="nav-link" @click="closeMenu">{{ $t('navigation.services') }}</a></li>
+          <li class="nav-item"><a href="#contacts" class="nav-link" @click="closeMenu">{{ $t('navigation.contacts') }}</a></li>
         </ul>
         
         <!-- Кнопка в меню для мобильных -->
         <div class="d-lg-none text-center mt-3">
-          <a href="#" @click.prevent="openPopup" class="btn-accent">ЗАКАЗАТЬ КОНСУЛЬТАЦИЮ</a>
+          <a href="#" @click.prevent="openPopup" class="btn-accent">{{ $t('navigation.consultation') }}</a>
         </div>
       </div>
 
@@ -55,7 +57,7 @@
             @click="toggleLanguagePopup"
             ref="languageBtn"
           >
-            {{ currentLanguage }}
+            {{ currentLanguageCode }}
           </button>
           
           <!-- Попап выбора языка -->
@@ -66,16 +68,16 @@
           >
             <button 
               class="language-option"
-              :class="{ active: currentLanguage === 'RU' }"
-              @click="setLanguage('RU')"
+              :class="{ active: currentLanguage === 'ru' }"
+              @click="setLanguage('ru')"
             >
               <span class="language-flag">🇷🇺</span>
               Русский
             </button>
             <button 
               class="language-option"
-              :class="{ active: currentLanguage === 'EN' }"
-              @click="setLanguage('EN')"
+              :class="{ active: currentLanguage === 'en' }"
+              @click="setLanguage('en')"
             >
               <span class="language-flag">🇺🇸</span>
               English
@@ -84,7 +86,7 @@
         </div>
 
         <!-- Кнопка справа -->
-        <a href="#" @click.prevent="openPopup" class="btn-accent">ЗАКАЗАТЬ КОНСУЛЬТАЦИЮ</a>
+        <a href="#" @click.prevent="openPopup" class="btn-accent">{{ $t('navigation.consultation') }}</a>
       </div>
 
       <!-- Мобильный попап языка -->
@@ -96,14 +98,14 @@
       >
         <div class="language-mobile-popup" @click.stop>
           <div class="language-popup-header">
-            <h3>Выберите язык</h3>
+            <h3>{{ $t('country.select') }}</h3>
             <button class="close-btn" @click="closeLanguagePopup">×</button>
           </div>
           <div class="language-options-mobile">
             <button 
               class="language-option-mobile"
-              :class="{ active: currentLanguage === 'RU' }"
-              @click="setLanguage('RU')"
+              :class="{ active: currentLanguage === 'ru' }"
+              @click="setLanguage('ru')"
             >
               <span class="language-flag">🇷🇺</span>
               <div>
@@ -113,8 +115,8 @@
             </button>
             <button 
               class="language-option-mobile"
-              :class="{ active: currentLanguage === 'EN' }"
-              @click="setLanguage('EN')"
+              :class="{ active: currentLanguage === 'en' }"
+              @click="setLanguage('en')"
             >
               <span class="language-flag">🇺🇸</span>
               <div>
@@ -133,25 +135,49 @@
 
 <script>
 import PopupContact from '@/components/home/PopupContact.vue';
+import { changeLanguage } from '@/i18n';
 
 export default {
   components: { PopupContact },
   name: "Header",
   data() {
     return {
-      currentLanguage: 'RU',
       isMenuOpen: false,
       showPopup: false,
       isLanguagePopupOpen: false,
       isLanguageMobilePopupOpen: false
     }
   },
+  computed: {
+    currentLanguage() {
+      return this.$i18n.locale;
+    },
+    currentLanguageCode() {
+      return this.currentLanguage.toUpperCase();
+    }
+  },
   methods: {
     setLanguage(lang) {
-      this.currentLanguage = lang;
+      changeLanguage(lang);
       this.closeLanguagePopup();
-      // Здесь можно добавить логику смены языка в приложении
-      console.log('Язык изменен на:', lang);
+      
+      // Эмитируем событие для родительского компонента
+      this.$emit('language-changed', lang);
+      
+      // Можно также обновить данные с бэкенда
+      this.reloadData();
+    },
+    
+    async reloadData() {
+      try {
+        // Здесь можно перезагружать данные с бэкенда
+        // Например: 
+        // await this.$store.dispatch('loadTeamData');
+        // await this.$store.dispatch('loadCasesData');
+        console.log('Язык изменен на:', this.currentLanguage);
+      } catch (error) {
+        console.error('Ошибка при загрузке данных:', error);
+      }
     },
     
     toggleMenu() {
@@ -169,14 +195,12 @@ export default {
     },
     
     toggleLanguagePopup() {
-      // Надежное определение мобильного устройства
       const isMobile = this.isMobileDevice();
       
       if (isMobile) {
         this.isLanguageMobilePopupOpen = !this.isLanguageMobilePopupOpen;
         this.isLanguagePopupOpen = false;
         
-        // Блокируем скролл тела страницы при открытии мобильного попапа
         if (this.isLanguageMobilePopupOpen) {
           document.body.style.overflow = 'hidden';
           document.documentElement.style.overflow = 'hidden';
@@ -190,7 +214,6 @@ export default {
     },
     
     isMobileDevice() {
-      // Несколько способов определения мобильного устройства
       return window.innerWidth < 992 || 
              window.matchMedia('(max-width: 991px)').matches ||
              window.innerHeight < 500 ||
@@ -208,7 +231,6 @@ export default {
       document.documentElement.style.overflow = '';
     },
     
-    // Закрытие попапа при клике вне его области
     handleClickOutside(event) {
       const languageBtn = this.$refs.languageBtn;
       const languagePopup = this.$refs.languagePopup;
@@ -220,9 +242,7 @@ export default {
       }
     },
     
-    // Обработчик изменения размера окна
     handleResize() {
-      // Закрываем языковой попап при изменении размера окна
       if (window.innerWidth >= 992 && this.isLanguageMobilePopupOpen) {
         this.closeLanguagePopup();
       }
@@ -231,7 +251,6 @@ export default {
       }
     },
     
-    // Обработчик клавиши Escape
     handleEscapeKey(event) {
       if (event.key === 'Escape') {
         this.closeLanguagePopup();
@@ -241,14 +260,12 @@ export default {
   },
   
   mounted() {
-    // Добавляем обработчики
     document.addEventListener('click', this.handleClickOutside);
     window.addEventListener('resize', this.handleResize);
     document.addEventListener('keydown', this.handleEscapeKey);
   },
   
   beforeUnmount() {
-    // Убираем обработчики при уничтожении компонента
     document.removeEventListener('click', this.handleClickOutside);
     window.removeEventListener('resize', this.handleResize);
     document.removeEventListener('keydown', this.handleEscapeKey);
@@ -256,6 +273,8 @@ export default {
   }
 };
 </script>
+
+
 
 <style scoped>
 header {
