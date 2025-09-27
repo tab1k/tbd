@@ -80,5 +80,26 @@
     "uz" : "Uzbekistan",
     "az" : "Azerbaijan",
     "select": "Language select"
+  },
+  "news": {
+    "loading": "Loading news...",
+    "retry": "Try again",
+    "load_error": "Failed to load news",
+    "previous_slide": "Previous slide",
+    "next_slide": "Next slide",
+    "reader": "Reader {number}",
+    "reaction": "📰 Latest news!",
+    "fallback_title1": "Creating trends",
+    "fallback_description1": "Managing meanings",
+    "fallback_reader1": "Dennis Barrett",
+    "fallback_reaction1": "🔥 Folio team nailed it!",
+    "fallback_title2": "Strategic communications",
+    "fallback_description2": "Effective solutions",
+    "fallback_reader2": "John Doe",
+    "fallback_reaction2": "Amazing work on the project!",
+    "fallback_title3": "Reputation management",
+    "fallback_description3": "Professional approach",
+    "fallback_reader3": "Jane Smith",
+    "fallback_reaction3": "The best team ever!"
   }
 }

@@ -26,7 +26,7 @@
                   >
                 </div>
                 <div class="photo-back">
-                  <p class="description">{{ member.description || 'Описание отсутствует' }}</p>
+                  <p class="description">{{ member.description || $t('team.no_description') }}</p>
                 </div>
               </div>
             </div>
@@ -49,70 +49,87 @@ export default {
     return {
       team: [],
       loading: true,
-      error: null
+      error: null,
+      currentLanguage: 'ru'
     };
   },
   async created() {
+    this.currentLanguage = localStorage.getItem('preferred-language') || this.$i18n.locale;
+    window.addEventListener('language-updated', this.handleLanguageUpdate);
     await this.fetchTeamData();
   },
   methods: {
     async fetchTeamData() {
       try {        
-        const response = await axios.get(`${API_URL}/team/`);
+        this.loading = true;
+        const response = await axios.get(`${API_URL}/team/`, {
+          params: {
+            lang: this.currentLanguage
+          }
+        });
         
         console.log('=== TEAM DATA DEBUG ===');
+        console.log('Language:', this.currentLanguage);
         console.log('Full response:', response.data);
         
-        // Проверь первый элемент
-        if (response.data.length > 0) {
-          const firstMember = response.data[0];
-          console.log('First team member:', firstMember);
-          console.log('Photo field:', firstMember.photo);
-          console.log('Photo URL will be:', this.getMemberPhotoUrl(firstMember.photo));
+        // Обрабатываем разные форматы ответа
+        if (response.data && response.data.teams) {
+          this.team = response.data.teams;
+        } else if (Array.isArray(response.data)) {
+          this.team = response.data;
+        } else {
+          this.team = [];
+          console.warn('Unexpected response format:', response.data);
         }
         
-        this.team = response.data;
+        console.log('Team data after processing:', this.team);
+        
+        this.error = null;
         
       } catch (error) {
         console.error('Error fetching team data:', error);
-        this.error = error.message;
+        this.error = this.$t('team.load_error');
+        this.team = [];
       } finally {
         this.loading = false;
       }
     },
+
+    handleLanguageUpdate(event) {
+      const newLanguage = event.detail.language;
+      if (newLanguage !== this.currentLanguage) {
+        this.currentLanguage = newLanguage;
+        this.reloadTeamData();
+      }
+    },
+
+    async reloadTeamData() {
+      console.log('Reloading team data for language:', this.currentLanguage);
+      await this.fetchTeamData();
+    },
     
     getMemberPhotoUrl(photo) {
-      console.log('getMemberPhotoUrl called with:', photo);
-      
       if (!photo) {
-        console.log('No photo provided, using default');
         return '/assets/img/default-avatar.png';
       }
       
-      // Если фото уже полный URL
       if (photo.startsWith('http')) {
         return photo;
       }
       
-      // Убери лишний слэш если есть
       if (photo.startsWith('/')) {
         photo = photo.substring(1);
       }
       
-      const fullUrl = `${MEDIA_API_URL}${photo}`;
-      console.log('Built photo URL:', fullUrl);
-      return fullUrl;
+      return `${MEDIA_API_URL}${photo}`;
     },
     
     handleImageError(event) {
-      console.error('Image load error:', {
-        src: event.target.src,
-        alt: event.target.alt
-      });
-      
-      // Более надежный fallback
       event.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YzZjNmMyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjQiIGZpbGw9IiM5OTk5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj7QotC10YHRgtC+0LLRi9C5PC90ZXh0Pjwvc3ZnPg==';
     }
+  },
+  beforeUnmount() {
+    window.removeEventListener('language-updated', this.handleLanguageUpdate);
   }
 }
 </script>
@@ -255,7 +272,6 @@ export default {
   
   .photo-back .description {
     font-size: 15px;
-    
   }
 }
 </style>

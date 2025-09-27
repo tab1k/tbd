@@ -140,7 +140,6 @@
               <div class="selected-image-item">
                 <img :src="getFilePreview(selectedImageFile)" alt="Превью" class="selected-image" />
                 <p class="image-name">{{ selectedImageFile.name }}</p>
-                <button @click="removeSelectedImage" class="remove-selected-btn">×</button>
               </div>
             </div>
           </div>
@@ -532,20 +531,6 @@ export default {
   height: 100px;
   object-fit: cover;
   border-radius: 4px;
-}
-
-.remove-selected-btn {
-  position: absolute;
-  top: -5px;
-  right: -5px;
-  background: #ff4444;
-  color: white;
-  border: none;
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
-  cursor: pointer;
-  font-size: 14px;
 }
 
 .section-title {

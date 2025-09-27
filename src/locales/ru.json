@@ -80,5 +80,26 @@
     "uz" : "Узбекистан",
     "az" : "Азербайджан",
     "select": "Выбор языка"
+  },
+  "news": {
+    "loading": "Загрузка новостей...",
+    "retry": "Попробовать снова",
+    "load_error": "Не удалось загрузить новости",
+    "previous_slide": "Предыдущий слайд",
+    "next_slide": "Следующий слайд",
+    "reader": "Читатель {number}",
+    "reaction": "📰 Актуальные новости!",
+    "fallback_title1": "Создаём тренды",
+    "fallback_description1": "Управляем смыслами",
+    "fallback_reader1": "Dennis Barrett",
+    "fallback_reaction1": "🔥 Folio team nailed it!",
+    "fallback_title2": "Стратегические коммуникации",
+    "fallback_description2": "Эффективные решения",
+    "fallback_reader2": "John Doe", 
+    "fallback_reaction2": "Amazing work on the project!",
+    "fallback_title3": "Управление репутацией",
+    "fallback_description3": "Профессиональный подход",
+    "fallback_reader3": "Jane Smith",
+    "fallback_reaction3": "The best team ever!"
   }
 }

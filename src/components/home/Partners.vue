@@ -14,29 +14,21 @@
             <div class="skeleton-logo" v-for="n in 6" :key="n"></div>
           </div>
 
-          <div v-if="!loading && !error" class="partners-wrapper">
-            <div class="partners-grid">
-              <div class="partners-row">
-                <!-- Дублируем логотипы для бесшовной анимации -->
-                <img 
-                  v-for="logo in logos" 
-                  :key="logo.id" 
-                  :src="getImageUrl(logo.image)" 
-                  :alt="logo.title || 'partner logo'" 
-                  loading="lazy"
-                />
-                <img 
-                  v-for="logo in logos" 
-                  :key="`duplicate-${logo.id}`" 
-                  :src="getImageUrl(logo.image)" 
-                  :alt="logo.title || 'partner logo'" 
-                  loading="lazy"
-                />
-              </div>
+          <div v-else-if="!error && logos.length > 0" class="partners-wrapper">
+            <div class="partners-row">
+              <img 
+                v-for="logo in logos" 
+                :key="logo.id" 
+                :src="getImageUrl(logo.image)" 
+                :alt="getLogoTitle(logo)" 
+                loading="lazy"
+                class="partner-logo"
+              />
             </div>
           </div>
 
           <div v-else-if="error" class="error">{{ error }}</div>
+          <div v-else class="error">Нет доступных логотипов</div>
         </div>
       </div>
     </div>
@@ -83,7 +75,28 @@ export default {
     // Метод для генерации полного URL для изображения
     getImageUrl(imagePath) {
       if (!imagePath) return '/assets/img/placeholder.jpg';
-      return `${MEDIA_API_URL}${imagePath}`;
+      
+      // Если путь уже содержит полный URL, возвращаем как есть
+      if (imagePath.startsWith('http')) {
+        return imagePath;
+      }
+      
+      // Убираем начальный слэш если он есть
+      const cleanPath = imagePath.startsWith('/') ? imagePath.slice(1) : imagePath;
+      return `${MEDIA_API_URL}${cleanPath}`;
+    },
+
+    // Метод для получения заголовка логотипа на текущем языке
+    getLogoTitle(logo) {
+      const currentLanguage = this.$i18n.locale;
+      
+      // Пытаемся получить заголовок на текущем языке
+      if (currentLanguage === 'en' && logo.title_en) {
+        return logo.title_en;
+      }
+      
+      // Возвращаем русский заголовок или заглушку
+      return logo.title_ru || logo.title || `Partner Logo ${logo.id}`;
     }
   }
 };
@@ -109,18 +122,31 @@ export default {
   position: relative;
 }
 
-/* Контейнер для строк */
-.partners-grid {
-  display: flex;
-  width: max-content;
-}
-
 /* Строка с логотипами */
 .partners-row {
   display: flex;
-  animation: moveLeft 40s linear infinite;
-  gap: 30px;
-  padding: 10px 0;
+  animation: moveLeft 30s linear infinite;
+  gap: 40px;
+  padding: 15px 0;
+  width: max-content;
+}
+
+/* Стиль для каждого логотипа */
+.partner-logo {
+  object-fit: contain;
+  transition: all 0.3s ease;
+  max-width: none;
+  width: auto;
+  height: 50px;
+  flex-shrink: 0;
+  opacity: 0.7;
+  filter: grayscale(30%);
+}
+
+.partner-logo:hover {
+  filter: grayscale(0%);
+  opacity: 1;
+  transform: scale(1.05);
 }
 
 /* Анимация движения логотипов влево */
@@ -133,21 +159,7 @@ export default {
   }
 }
 
-/* Общий стиль для логотипов */
-.partners-row img {
-  object-fit: contain;
-  transition: all 0.3s ease;
-  max-width: none;
-  width: auto;
-  max-height: 45px;
-  flex-shrink: 0;
-}
-
-.partners-row img:hover {
-  filter: grayscale(0%);
-  opacity: 1;
-}
-
+/* Адаптивная верстка */
 @media (min-width: 768px) {
   .col-md-4 {
     flex: 0 0 auto;
@@ -173,11 +185,15 @@ export default {
   }
 
   .partners-row {
-    gap: 25px;
+    gap: 30px;
   }
 
-  .partners-row img {
-    max-height: 40px;
+  .partner-logo {
+    height: 40px;
+  }
+  
+  .partners-row {
+    animation-duration: 25s;
   }
 }
 
@@ -195,72 +211,104 @@ export default {
   }
 
   .partners-row {
-    gap: 20px;
-    animation-duration: 30s;
+    gap: 25px;
   }
 
-  .partners-row img {
-    max-height: 30px;
+  .partner-logo {
+    height: 35px;
+  }
+  
+  .partners-row {
+    animation-duration: 20s;
   }
 }
 
 /* Для мобильных устройств (до 576px) */
 @media (max-width: 576px) {
   .partners-row {
-    gap: 15px;
+    gap: 20px;
   }
 
-  .partners-row img {
-    max-height: 25px;
+  .partner-logo {
+    height: 30px;
+  }
+  
+  .partners-row {
+    animation-duration: 15s;
   }
 }
 
 /* Очень маленькие экраны */
 @media (max-width: 400px) {
   .partners-row {
-    gap: 12px;
-    animation-duration: 15s;
+    gap: 15px;
   }
 
-  .partners-row img {
-    max-height: 22px;
+  .partner-logo {
+    height: 25px;
+  }
+  
+  .partners-row {
+    animation-duration: 12s;
   }
 }
 
 /* Стили для скелетона */
 .partners-skeleton {
   display: flex;
-  flex-wrap: nowrap;
   gap: 30px;
   justify-content: center;
   overflow: hidden;
 }
 
 .skeleton-logo {
-  background-color: #ccc;
-  width: 100px;
-  height: 45px;
-  border-radius: 4px;
-  animation: skeleton-loading 1.5s infinite ease-in-out;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  width: 120px;
+  height: 50px;
+  border-radius: 8px;
   flex-shrink: 0;
+  animation: skeleton-loading 1.5s infinite;
 }
 
 @keyframes skeleton-loading {
   0% {
-    background-color: #ccc;
-  }
-  50% {
-    background-color: #e0e0e0;
+    background-position: 200% 0;
   }
   100% {
-    background-color: #ccc;
+    background-position: -200% 0;
   }
 }
 
 .error {
   text-align: center;
-  font-size: 18px;
-  color: red;
+  font-size: 16px;
+  color: #666;
   padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+/* Пауза анимации при наведении */
+.partners-wrapper:hover .partners-row {
+  animation-play-state: paused;
+}
+
+/* Улучшенная доступность */
+@media (prefers-reduced-motion: reduce) {
+  .partners-row {
+    animation: none;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+    gap: 20px;
+  }
+}
+
+/* Для очень большого количества логотипов */
+@media (min-width: 1200px) {
+  .partners-row {
+    animation-duration: 40s;
+  }
 }
 </style>

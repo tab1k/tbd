@@ -157,24 +157,89 @@ export default {
     }
   },
   methods: {
-    setLanguage(lang) {
-      changeLanguage(lang);
-      this.closeLanguagePopup();
-      
-      // Эмитируем событие для родительского компонента
-      this.$emit('language-changed', lang);
-      
-      // Можно также обновить данные с бэкенда
-      this.reloadData();
+    async setLanguage(lang) {
+      try {
+        // Сохраняем язык в localStorage
+        localStorage.setItem('preferred-language', lang);
+        
+        // Устанавливаем язык в i18n
+        changeLanguage(lang);
+        
+        // Обновляем язык на бэкенде через API
+        await this.updateBackendLanguage(lang);
+        
+        this.closeLanguagePopup();
+        
+        // Эмитируем событие для родительского компонента
+        this.$emit('language-changed', lang);
+        
+        // Обновляем данные с бэкенда
+        await this.reloadData();
+        
+        console.log('Язык успешно изменен на:', lang);
+      } catch (error) {
+        console.error('Ошибка при смене языка:', error);
+      }
+    },
+    
+    async updateBackendLanguage(lang) {
+      try {
+        // Отправляем POST запрос для обновления языка на бэкенде
+        const response = await fetch('/api/language/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': this.getCSRFToken(),
+          },
+          body: JSON.stringify({ language: lang })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Бэкенд язык обновлен:', data);
+      } catch (error) {
+        console.warn('Не удалось обновить язык на бэкенде:', error);
+        // Продолжаем работу даже если бэкенд недоступен
+      }
+    },
+    
+    getCSRFToken() {
+      // Получаем CSRF token из cookies
+      const name = 'csrftoken';
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
     },
     
     async reloadData() {
       try {
-        // Здесь можно перезагружать данные с бэкенда
-        // Например: 
-        // await this.$store.dispatch('loadTeamData');
-        // await this.$store.dispatch('loadCasesData');
-        console.log('Язык изменен на:', this.currentLanguage);
+        // Получаем текущий язык
+        const lang = this.currentLanguage;
+        
+        // Создаем событие для обновления данных во всем приложении
+        const updateEvent = new CustomEvent('language-updated', {
+          detail: { language: lang }
+        });
+        window.dispatchEvent(updateEvent);
+        
+        // Если используется Vuex, диспатчим действие
+        if (this.$store && this.$store.dispatch) {
+          await this.$store.dispatch('fetchAllData', lang);
+        }
+        
+        console.log('Данные обновлены для языка:', lang);
       } catch (error) {
         console.error('Ошибка при загрузке данных:', error);
       }
@@ -256,10 +321,20 @@ export default {
         this.closeLanguagePopup();
         this.closeMenu();
       }
+    },
+    
+    // Проверяем сохраненный язык при загрузке
+    checkSavedLanguage() {
+      const savedLang = localStorage.getItem('preferred-language');
+      if (savedLang && savedLang !== this.currentLanguage) {
+        console.log('Восстанавливаем сохраненный язык:', savedLang);
+        this.setLanguage(savedLang);
+      }
     }
   },
   
   mounted() {
+    this.checkSavedLanguage();
     document.addEventListener('click', this.handleClickOutside);
     window.addEventListener('resize', this.handleResize);
     document.addEventListener('keydown', this.handleEscapeKey);
@@ -274,9 +349,8 @@ export default {
 };
 </script>
 
-
-
 <style scoped>
+/* Стили остаются без изменений, так как они уже хорошо написаны */
 header {
   background: #fff;
   border-bottom: 1px solid #eee;

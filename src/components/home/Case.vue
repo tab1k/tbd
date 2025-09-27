@@ -103,13 +103,13 @@
               class="modal-image"
             >
             <div v-else class="image-placeholder">
-              Изображение не доступно
+              {{ $t('cases.image_not_available') }}
             </div>
             
             <!-- Свайп индикаторы -->
             <div v-if="isMobile && selectedCase?.images?.length > 1" class="swipe-indicators">
               <div class="swipe-hint" v-if="showSwipeHint">
-                ← Свайп для навигации →
+                {{ $t('cases.swipe_hint') }}
               </div>
             </div>
           </div>
@@ -136,30 +136,29 @@
     </div>
 
     <div class="mt-5">
-    <div class="row">
-      <!-- Левая часть (30%) -->
-      <div class="col-lg-3 col-md-4 mb-4">
-        <p style="color: #666F8E;">{{ $t('cases.projects') }}</p>
-      </div>
+      <div class="row">
+        <!-- Левая часть (30%) -->
+        <div class="col-lg-3 col-md-4 mb-4">
+          <p style="color: #666F8E;">{{ $t('cases.projects') }}</p>
+        </div>
 
-      <!-- Правая часть (70%) -->
-      <div class="col-lg-9 col-md-8">
-        <ul class="list-unstyled project-list">
-          <li class="mb-2">{{ $t('cases.project1') }}</li>
-          <li class="mb-2">{{ $t('cases.project2') }}</li>
-          <li class="mb-2">{{ $t('cases.project3') }}</li>
-          <li class="mb-2">{{ $t('cases.project4') }}</li>
-          <li class="mb-2">{{ $t('cases.project5') }}</li>
-        </ul>
+        <!-- Правая часть (70%) -->
+        <div class="col-lg-9 col-md-8">
+          <ul class="list-unstyled project-list">
+            <li class="mb-2">{{ $t('cases.project1') }}</li>
+            <li class="mb-2">{{ $t('cases.project2') }}</li>
+            <li class="mb-2">{{ $t('cases.project3') }}</li>
+            <li class="mb-2">{{ $t('cases.project4') }}</li>
+            <li class="mb-2">{{ $t('cases.project5') }}</li>
+          </ul>
+        </div>
       </div>
-
     </div>
-  </div>
   </div>
 </template>
 
 <style scoped>
-
+/* Стили остаются без изменений */
 li.mb-2 {
   color: #666F8E;
 }
@@ -489,6 +488,7 @@ export default {
       isMobile: window.innerWidth < 768,
       loading: true,
       error: null,
+      currentLanguage: 'ru',
       
       // Свайп переменные
       touchStartX: 0,
@@ -512,6 +512,12 @@ export default {
     }
   },
   async created() {
+    // Получаем сохраненный язык или используем текущий
+    this.currentLanguage = localStorage.getItem('preferred-language') || this.$i18n.locale;
+    
+    // Слушаем событие смены языка
+    window.addEventListener('language-updated', this.handleLanguageUpdate);
+    
     await this.fetchCasesData();
     window.addEventListener('resize', this.checkMobile);
   },
@@ -519,14 +525,46 @@ export default {
     async fetchCasesData() {
       try {
         this.loading = true;
-        const response = await axios.get(`${API_URL}/cases/`);
-        this.cases = response.data || [];
+        const response = await axios.get(`${API_URL}/cases/`, {
+          params: {
+            lang: this.currentLanguage
+          }
+        });
+        
+        // Обрабатываем разные форматы ответа
+        if (response.data && Array.isArray(response.data)) {
+          this.cases = response.data;
+        } else if (response.data && response.data.cases) {
+          this.cases = response.data.cases;
+        } else {
+          this.cases = [];
+        }
+        
+        this.error = null;
       } catch (error) {
         console.error('Error fetching cases data:', error);
-        this.error = 'Не удалось загрузить данные кейсов';
+        this.error = this.$t('cases.load_error');
         this.cases = [];
       } finally {
         this.loading = false;
+      }
+    },
+
+    handleLanguageUpdate(event) {
+      const newLanguage = event.detail.language;
+      if (newLanguage !== this.currentLanguage) {
+        this.currentLanguage = newLanguage;
+        this.reloadCasesData();
+      }
+    },
+
+    async reloadCasesData() {
+      console.log('Reloading cases data for language:', this.currentLanguage);
+      await this.fetchCasesData();
+      
+      // Закрываем модальное окно при смене языка
+      if (this.isModalOpen) {
+        this.closeModal();
       }
     },
 
@@ -715,6 +753,7 @@ export default {
   beforeUnmount() {
     document.removeEventListener('keydown', this._handleEscape);
     window.removeEventListener('resize', this.checkMobile);
+    window.removeEventListener('language-updated', this.handleLanguageUpdate);
   }
 }
 </script>

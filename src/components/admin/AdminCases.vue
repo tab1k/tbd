@@ -132,7 +132,6 @@
                 <div v-for="(file, index) in selectedImageFiles" :key="index" class="selected-image-item">
                   <img :src="getFilePreview(file)" alt="Превью" class="selected-image" />
                   <p class="image-name">{{ file.name }}</p>
-                  <button @click="removeSelectedImage(index)" class="remove-selected-btn">×</button>
                 </div>
               </div>
             </div>

@@ -29,13 +29,13 @@
           <!-- Skeleton loader -->
           <div v-if="isLoading" class="loading-placeholder">
             <div class="skeleton-image"></div>
-            <div class="loading-text">Загрузка новостей...</div>
+            <div class="loading-text">{{ $t('news.loading') }}</div>
           </div>
           
           <!-- Ошибка загрузки -->
           <div v-else-if="error" class="error-placeholder">
             <div class="error-message">{{ error }}</div>
-            <button @click="loadNewsData" class="retry-btn">Попробовать снова</button>
+            <button @click="loadNewsData" class="retry-btn">{{ $t('news.retry') }}</button>
           </div>
           
           <!-- Слайдер с новостями -->
@@ -110,14 +110,14 @@
           <button 
             class="nav-arrow nav-prev" 
             @click="prevSlide"
-            aria-label="Предыдущий слайд"
+            :aria-label="$t('news.previous_slide')"
           >
             ‹
           </button>
           <button 
             class="nav-arrow nav-next" 
             @click="nextSlide"
-            aria-label="Следующий слайд"
+            :aria-label="$t('news.next_slide')"
           >
             ›
           </button>
@@ -137,7 +137,7 @@
 
 <script>
 import { useI18n } from 'vue-i18n';
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, onMounted, onUnmounted, computed } from "vue";
 import PopupContact from "@/components/home/PopupContact.vue";
 import axios from 'axios';
 import { API_URL, MEDIA_API_URL } from '@/config.js';
@@ -149,6 +149,7 @@ export default {
   name: "Hero",
   components: { PopupContact },
   setup() {
+    const { t, locale } = useI18n();
     const showPopup = ref(false);
     const openPopup = () => (showPopup.value = true);
     const closePopup = () => (showPopup.value = false);
@@ -166,46 +167,56 @@ export default {
     const slides = ref([]);
     const isLoading = ref(true);
     const error = ref(null);
+    const currentLanguage = ref(localStorage.getItem('preferred-language') || locale.value);
     
     // Fallback данные на случай ошибки загрузки
-    const fallbackSlides = [
+    const fallbackSlides = computed(() => [
       {
         image: img01,
-        title: "Создаём тренды",
-        description: "Управляем смыслами",
+        title: t('news.fallback_title1'),
+        description: t('news.fallback_description1'),
         url: "#",
         testimonial: {
-          name: "Dennis Barrett",
-          text: "🔥 Folio team nailed it!",
+          name: t('news.fallback_reader1'),
+          text: t('news.fallback_reaction1'),
           avatar: "https://i.pravatar.cc/100?img=8",
         },
       },
       {
         image: img01,
-        title: "Стратегические коммуникации", 
-        description: "Эффективные решения",
+        title: t('news.fallback_title2'), 
+        description: t('news.fallback_description2'),
         url: "#",
         testimonial: {
-          name: "John Doe",
-          text: "Amazing work on the project!",
+          name: t('news.fallback_reader2'),
+          text: t('news.fallback_reaction2'),
           avatar: "https://i.pravatar.cc/100?img=9",
         },
       },
       {
         image: img01,
-        title: "Управление репутацией",
-        description: "Профессиональный подход",
+        title: t('news.fallback_title3'),
+        description: t('news.fallback_description3'),
         url: "#",
         testimonial: {
-          name: "Jane Smith",
-          text: "The best team ever!",
+          name: t('news.fallback_reader3'),
+          text: t('news.fallback_reaction3'),
           avatar: "https://i.pravatar.cc/100?img=10",
         },
       },
-    ];
+    ]);
     
     const currentSlide = ref(0);
     let autoSlideInterval = null;
+
+    // Обработчик события смены языка
+    const handleLanguageUpdate = (event) => {
+      const newLanguage = event.detail.language;
+      if (newLanguage !== currentLanguage.value) {
+        currentLanguage.value = newLanguage;
+        reloadNewsData();
+      }
+    };
 
     // Загрузка данных из API
     const loadNewsData = async () => {
@@ -214,16 +225,35 @@ export default {
         error.value = null;
 
         console.log('Загружаем данные из:', `${API_URL}/news`);
-        const response = await axios.get(`${API_URL}/news`);
+        console.log('Язык запроса:', currentLanguage.value);
+        
+        const response = await axios.get(`${API_URL}/news`, {
+          params: {
+            lang: currentLanguage.value
+          }
+        });
 
         console.log('Полученные данные:', response.data);
 
-        if (response.data && response.data.results && response.data.results.length > 0) {
-          console.log('Найдено новостей:', response.data.results.length);
+        // Обрабатываем разные форматы ответа
+        let newsData = [];
+        if (response.data && Array.isArray(response.data)) {
+          newsData = response.data;
+        } else if (response.data && response.data.results) {
+          newsData = response.data.results;
+        } else if (response.data && response.data.news) {
+          newsData = response.data.news;
+        }
+
+        if (newsData && newsData.length > 0) {
+          console.log('Найдено новостей:', newsData.length);
 
           // Преобразуем новости в формат слайдов
-          slides.value = response.data.results.map((newsItem, index) => {
-            const imageUrl = newsItem.image ? `${MEDIA_API_URL}${newsItem.image}` : img01;
+          slides.value = newsData.map((newsItem, index) => {
+            const imageUrl = newsItem.image ? 
+              (newsItem.image.startsWith('http') ? newsItem.image : `${MEDIA_API_URL}${newsItem.image}`) 
+              : img01;
+            
             console.log(`Новость ${index + 1}: ${newsItem.title}, URL: ${newsItem.url}`);
 
             return {
@@ -234,24 +264,29 @@ export default {
               url: newsItem.url,
               created_at: newsItem.created_at,
               testimonial: {
-                name: `Читатель ${index + 1}`,
-                text: "📰 Актуальные новости!",
+                name: t('news.reader', { number: index + 1 }),
+                text: t('news.reaction'),
                 avatar: `https://i.pravatar.cc/100?img=${index + 8}`,
               },
             };
           });
         } else {
           console.log('Новости не найдены, используем fallback');
-          slides.value = fallbackSlides;
+          slides.value = fallbackSlides.value;
         }
       } catch (err) {
         console.error('Ошибка загрузки новостей:', err);
         console.error('Детали ошибки:', err.response?.data || err.message);
-        error.value = 'Не удалось загрузить новости';
-        slides.value = fallbackSlides;
+        error.value = t('news.load_error');
+        slides.value = fallbackSlides.value;
       } finally {
         isLoading.value = false;
       }
+    };
+
+    const reloadNewsData = () => {
+      console.log('Reloading news data for language:', currentLanguage.value);
+      loadNewsData();
     };
 
     // Обработка ошибок изображений
@@ -263,7 +298,8 @@ export default {
     const formatDate = (dateString) => {
       if (!dateString) return '';
       try {
-        return new Date(dateString).toLocaleDateString('ru-RU');
+        const date = new Date(dateString);
+        return date.toLocaleDateString(currentLanguage.value === 'en' ? 'en-US' : 'ru-RU');
       } catch (e) {
         return '';
       }
@@ -349,11 +385,15 @@ export default {
     };
 
     onMounted(() => {
+      // Слушаем событие смены языка
+      window.addEventListener('language-updated', handleLanguageUpdate);
+      
       loadNewsData();
       document.addEventListener('keydown', handleKeydown);
     });
 
     onUnmounted(() => {
+      window.removeEventListener('language-updated', handleLanguageUpdate);
       stopAutoSlide();
       document.removeEventListener('keydown', handleKeydown);
     });
@@ -382,6 +422,8 @@ export default {
   },
 };
 </script>
+
+
 
 <style scoped>
 /* Состояния загрузки и ошибки */
